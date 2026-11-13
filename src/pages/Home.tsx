@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { EVENT, feeLine, isEarlyBird, FEE, rupees, prettyPhone, siteUrl } from "../config";
+import { EVENT, feeLine, isEarlyBird, FEE, photo, rupees, prettyPhone, siteUrl } from "../config";
 import { useLive } from "../lib/store";
 import { DIVS, fmtTime, isDone, matchTime, startMin, statusMap, type Div } from "../lib/tournament";
 import { Icon, LogoMark } from "../components/Icon";
@@ -26,12 +26,13 @@ export default function Home() {
   }, [state, filter]);
 
   const promoStory: StoryContent = {
-    kicker: `${EVENT.dateLabel}, ${EVENT.city}`,
+    kicker: `29.11 · ${EVENT.city}`,
     title: ["Serve it.", "Own it."],
-    highlight: 0,
-    lines: [EVENT.name, `${EVENT.venue}, ${EVENT.city}`, "Men’s, Women’s and Mixed Doubles", feeLine()],
-    footer: regOpen ? "Register now" : "Follow live",
-    url: regOpen ? siteUrl() : `${siteUrl()}#/live`,
+    highlight: 1,
+    sticker: isEarlyBird() ? ["early bird", rupees(FEE.early)] : ["pull up", "29.11"],
+    lines: ["men’s doubles · mixed doubles · solo", `${EVENT.venue}, ${EVENT.city}`, feeLine(), "all levels welcome, no cap"],
+    footer: regOpen ? "Claim your spot" : "Follow live",
+    url: regOpen ? `${siteUrl()}#/register` : `${siteUrl()}#/live`,
   };
 
   const nav = [["Tournament", "tournament"], ["Schedule", "schedule"], ["Divisions", "divisions"], ["Venue", "venue"]];
@@ -78,9 +79,9 @@ export default function Home() {
       <main>
         <section id="tournament" className="relative flex min-h-[790px] items-end overflow-hidden bg-[#163b25] text-white">
           <img
-            src="https://images.unsplash.com/photo-1756477558468-b3e485757470?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&q=88&w=1800"
-            alt="Player competing on a pickleball court"
-            className="absolute inset-0 h-full w-full object-cover object-[center_38%]"
+            src={photo("sunset-courts.jpg")}
+            alt="Pickleball courts under a pink and orange sunset"
+            className="absolute inset-0 h-full w-full object-cover object-[center_45%]"
           />
           <div className="hero-overlay absolute inset-0" />
           <div className="court-lines pointer-events-none absolute -right-24 top-36 h-[580px] w-[620px] rotate-[-8deg] opacity-35" />
@@ -109,7 +110,7 @@ export default function Home() {
             </div>
             <div className="hidden border-l border-white/35 pl-8 lg:block">
               <p className="text-sm leading-6 text-white/75">
-                One day. Three divisions. Live scores on your phone. {EVENT.city}’s open doubles pickleball tournament at {EVENT.venue}.
+                One day. Three divisions. Live scores on your phone. {EVENT.city}’s open pickleball tournament at {EVENT.venue}.
               </p>
               <div className="mt-7 grid grid-cols-2 gap-6">
                 <div>
@@ -155,7 +156,7 @@ export default function Home() {
                 <h2 className="section-title">Match schedule</h2>
               </div>
               <div className="flex w-fit flex-wrap rounded-full bg-[#e5e4dc] p-1">
-                {([["all", "All"], ...DIVS.map((d) => [d.key, d.label.replace(" Doubles", "")])] as [string, string][]).map(([key, label]) => (
+                {([["all", "All"], ...DIVS.map((d) => [d.key, d.label.replace(" Doubles", "").replace(" Entry", "")])] as [string, string][]).map(([key, label]) => (
                   <button key={key} onClick={() => setFilter(key as "all" | Div)}
                     className={`rounded-full px-5 py-2.5 text-sm font-bold transition ${filter === key ? "bg-[#132116] text-white shadow" : "text-[#5b655e] hover:text-[#132116]"}`}>
                     {label}
@@ -188,11 +189,11 @@ export default function Home() {
                 <p className="eyebrow text-[#b8ef3f]">Pick your bracket</p>
                 <h2 className="section-title">Built for<br />the bold.</h2>
                 <p className="mt-6 max-w-sm leading-7 text-white/62">
-                  Every division starts with pool play, then moves into a knockout bracket. Every team plays at least two matches.
+                  Every division starts with pool play, then moves into a knockout bracket. Every team and solo player plays at least two matches.
                 </p>
                 <div className="mt-10 overflow-hidden rounded-[24px]">
-                  <img src="https://images.unsplash.com/photo-1778180883969-073d6361fea3?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&q=85&w=900"
-                    alt="Aerial view of pickleball courts" className="h-56 w-full object-cover" />
+                  <img src={photo("paddle-crew.jpg")}
+                    alt="Friends standing in a circle with their paddles on a green court" className="h-72 w-full object-cover object-[center_55%]" />
                 </div>
               </div>
               <div className="divide-y divide-white/15 border-y border-white/15">
@@ -208,7 +209,7 @@ export default function Home() {
                       </span>
                       <span className="hidden text-sm md:block">
                         <b style={{ color: d.color }}>{n} / {state.settings.cap}</b>
-                        <small className="block text-white/45">teams filled</small>
+                        <small className="block text-white/45">{d.key === "solo" ? "players in" : "teams filled"}</small>
                       </span>
                       <span className="grid h-12 w-12 place-items-center rounded-full border border-white/25 transition group-hover:rotate-[-30deg] group-hover:bg-[#b8ef3f] group-hover:text-[#132116]">
                         <Icon name="arrow" />
@@ -217,6 +218,34 @@ export default function Home() {
                   );
                 })}
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="px-5 pt-24 md:px-10 lg:px-16 lg:pt-32" aria-labelledby="vibe-title">
+          <div className="mx-auto max-w-[1312px]">
+            <div className="mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
+              <div>
+                <p className="eyebrow">The vibe</p>
+                <h2 id="vibe-title" className="section-title">Courts, coffee<br />and chaos.</h2>
+              </div>
+              <p className="max-w-sm text-[#5b655e]">
+                Bring your partner, your playlist and your best fit. Stay for the finals, the photos and the post-match chai.
+              </p>
+            </div>
+            <div className="-mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0">
+              {[
+                ["ball-net-shadow.jpg", "Pickleball resting in the net’s shadow", "dink responsibly"],
+                ["golden-hour-paddles.jpg", "Two paddles held up against a sunset over the court", "golden hour rallies"],
+                ["matcha-paddle.jpg", "Iced coffee and matcha on a striped paddle", "matcha, then match"],
+              ].map(([src, alt, caption], i) => (
+                <figure key={src} className={`relative w-[78%] shrink-0 snap-center overflow-hidden rounded-[28px] md:w-auto ${i === 1 ? "md:translate-y-10" : ""}`}>
+                  <img src={photo(src)} alt={alt} loading="lazy" className="aspect-[4/5] w-full object-cover" />
+                  <figcaption className="absolute bottom-4 left-4 rounded-full bg-[#f4f3ed]/90 px-4 py-2 text-sm font-bold text-[#132116] backdrop-blur-sm">
+                    {caption}
+                  </figcaption>
+                </figure>
+              ))}
             </div>
           </div>
         </section>

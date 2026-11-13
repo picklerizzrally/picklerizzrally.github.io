@@ -12,7 +12,8 @@ Website for a doubles pickleball tournament at Buddy's Pickleball, Indore, on 29
 |---|---|
 | Players | Team registration with UPI payment reference, live schedule with "On court now" and "Next up", pool standings, knockout bracket, team search, a page per team showing their next court and time |
 | Organiser | Login, approve or reject registrations, WhatsApp confirmations, walk-in teams, check-in, schedule generator, score entry with rule checks, automatic knockout bracket |
-| Instagram | One tap creates a 1080 x 1920 story image with a QR code back to the site: registrations open, last few spots, schedule out, live now, team results, champions |
+| Instagram | One tap creates a 1080 x 1920 story poster (starburst sticker, marquee band, ticket stub with QR code): registrations open, last few spots, schedule dropped, live now, team results, champions |
+| Payments | UPI pay button that opens GPay, PhonePe or Paytm with the amount filled in on phones, and a scannable UPI QR on laptops |
 
 ## How it works
 
@@ -26,7 +27,7 @@ Website for a doubles pickleball tournament at Buddy's Pickleball, Indore, on 29
 
 1. *Snake seeding* deals teams into pools by skill (A, B, C, then C, B, A) so every pool has one strong team.
 2. *Circle method round robin* creates every pairing in each pool exactly once.
-3. *Greedy court packer* fills every court in every slot, preferring matches where neither team played the slot before. On 24 test teams and 3 courts it packed 30 matches into 10 slots with zero back-to-back games.
+3. *Greedy court packer* fills every court in every slot, preferring matches where neither team played the slot before. On 24 test teams and the venue's 2 courts it packed 30 matches into 15 slots with zero back-to-back games.
 4. *Standings* rank by wins, then head to head when exactly two teams are level, then point difference, then points scored.
 5. *Knockout seeding* uses standard bracket order, gives byes to top seeds, and swaps first-round opponents to avoid same-pool rematches. Rounds are timed backwards from the final, so every final lands in the last block of the day.
 

@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from "react";
-import { EVENT, prettyPhone } from "../config";
+import { useEffect, useState, type FormEvent } from "react";
+import QRCode from "qrcode";
+import { EVENT, currentFee, prettyPhone, rupees } from "../config";
 import { submitRegistration, useLive } from "../lib/store";
 import { DIVS, type Div } from "../lib/tournament";
 import { Icon } from "./Icon";
@@ -13,6 +14,53 @@ const SKILLS = [
   [5, "5: Tournament level"],
 ] as const;
 
+const isPhone = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+// Standard UPI payment link: opens GPay, PhonePe, Paytm or any UPI app with the amount filled in
+function upiLink(amount: number) {
+  // the UPI ID stays unencoded because some apps reject %40 in place of @
+  return `upi://pay?pa=${EVENT.upiId}&pn=${encodeURIComponent(EVENT.brand)}&am=${amount}.00&cu=INR&tn=${encodeURIComponent(`${EVENT.brand} entry`)}`;
+}
+
+function PayBox({ solo }: { solo: boolean }) {
+  const fee = currentFee(solo);
+  const link = upiLink(fee);
+  const [qr, setQr] = useState("");
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    QRCode.toDataURL(link, { margin: 1, width: 220, color: { dark: "#132116", light: "#ffffff" } }).then(setQr).catch(() => setQr(""));
+  }, [link]);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(EVENT.upiId); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* shows the ID anyway */ }
+  };
+  return (
+    <div className="rounded-[20px] border border-[#d8d9d1] bg-white p-4">
+      <div className="flex items-center justify-between gap-3">
+        <b className="text-sm">Step 1: Pay {rupees(fee)}</b>
+        <span className="rounded-full bg-[#dff7a8] px-2.5 py-1 text-[11px] font-bold text-[#29420d]">UPI</span>
+      </div>
+      {isPhone() ? (
+        <>
+          <a href={link} className="mt-3 flex w-full items-center justify-center gap-3 rounded-full bg-[#132116] py-3.5 font-bold text-white">
+            Pay {rupees(fee)} with UPI <Icon name="arrow" size={18} />
+          </a>
+          <p className="mt-2 text-center text-xs text-[#687169]">Opens GPay, PhonePe, Paytm or any UPI app with the amount filled in</p>
+        </>
+      ) : (
+        <div className="mt-3 flex items-center gap-4">
+          {qr ? <img src={qr} alt={`UPI QR code to pay ${rupees(fee)}`} className="h-28 w-28 rounded-xl border border-[#eeeee8]" /> : <div className="h-28 w-28 rounded-xl bg-[#eeeee8]" />}
+          <p className="text-sm text-[#5b655e]">Scan with any UPI app on your phone. The amount fills in on its own.</p>
+        </div>
+      )}
+      <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-[#f4f3ed] px-4 py-2.5 text-sm">
+        <span>UPI ID <b className="text-[#132116]">{EVENT.upiId}</b></span>
+        <button type="button" onClick={copy} className="font-bold underline">{copied ? "Copied" : "Copy"}</button>
+      </div>
+      <p className="mt-2 text-xs text-[#687169]">{isPhone() ? "If the button does not open your app, pay to the UPI ID by hand." : "Or pay to this UPI ID by hand from any app."}</p>
+    </div>
+  );
+}
+
 export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; onClose: () => void }) {
   const { state } = useLive();
   const count = (d: Div) => state.teams.filter((t) => t.div === d).length;
@@ -25,6 +73,7 @@ export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; on
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [done, setDone] = useState(false);
+  const solo = f.division === "solo";
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
 
   const submit = async (e: FormEvent) => {
@@ -36,7 +85,10 @@ export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; on
     if (count(f.division) >= state.settings.cap) return setErr("That division is full. Pick another one.");
     setBusy(true);
     const msg = await submitRegistration({
-      teamName: f.teamName.trim(), player1: f.player1.trim(), player2: f.player2.trim(),
+      // a solo entry shows on the schedule under the player's own name
+      teamName: solo ? f.player1.trim() : f.teamName.trim(),
+      player1: f.player1.trim(),
+      player2: solo ? "" : f.player2.trim(),
       phone, email: f.email.trim(), division: f.division, skill: Number(f.skill), upiRef: f.upiRef.trim(),
     });
     setBusy(false);
@@ -54,7 +106,7 @@ export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; on
             <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#b8ef3f]"><Icon name="trophy" size={38} /></span>
             <h3 className="font-display mt-7 text-4xl font-bold uppercase">You’re on the list.</h3>
             <p className="mx-auto mt-3 max-w-sm text-[#667068]">
-              We’ll check your payment and confirm your team on WhatsApp. Your team shows up on the live page once it is confirmed.
+              We’ll check your payment and confirm your spot on WhatsApp. You show up on the live page once it is confirmed.
             </p>
             <button onClick={onClose} className="mt-7 rounded-full bg-[#132116] px-7 py-3.5 font-bold text-white">Done</button>
           </div>
@@ -69,48 +121,54 @@ export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; on
             <p className="eyebrow">{EVENT.brand} {EVENT.year}</p>
             <h3 className="font-display mt-3 text-4xl font-bold uppercase">Claim your spot</h3>
             <p className="mt-2 text-sm text-[#687169]">
-              Entry: <Price className="text-[#132116]" />
-              <br />
-              Pay by UPI to <b className="text-[#132116]">{EVENT.upiId}</b>, then add the transaction ID below.
+              Entry: <Price className="text-[#132116]" solo={solo} />
             </p>
             <form onSubmit={submit} className="mt-7 space-y-4">
-              <label className="block text-sm font-bold">Team name
-                <input required maxLength={40} value={f.teamName} onChange={set("teamName")} placeholder="Poha Paddlers" className="form-input" />
+              <label className="block text-sm font-bold">Division
+                <select value={f.division} onChange={set("division")} className="form-input">
+                  {DIVS.map((d) => (
+                    <option key={d.key} value={d.key} disabled={count(d.key) >= state.settings.cap}>
+                      {d.label}{d.key === "solo" ? " (singles)" : ""}{count(d.key) >= state.settings.cap ? " (full)" : ""}
+                    </option>
+                  ))}
+                </select>
               </label>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-bold">Player 1 (captain)
+              {solo ? (
+                <label className="block text-sm font-bold">Your name
                   <input required maxLength={40} value={f.player1} onChange={set("player1")} placeholder="Full name" className="form-input" />
                 </label>
-                <label className="block text-sm font-bold">Player 2
-                  <input required maxLength={40} value={f.player2} onChange={set("player2")} placeholder="Full name" className="form-input" />
-                </label>
-              </div>
+              ) : (
+                <>
+                  <label className="block text-sm font-bold">Team name
+                    <input required maxLength={40} value={f.teamName} onChange={set("teamName")} placeholder="Poha Paddlers" className="form-input" />
+                  </label>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block text-sm font-bold">Player 1 (captain)
+                      <input required maxLength={40} value={f.player1} onChange={set("player1")} placeholder="Full name" className="form-input" />
+                    </label>
+                    <label className="block text-sm font-bold">Player 2
+                      <input required maxLength={40} value={f.player2} onChange={set("player2")} placeholder="Full name" className="form-input" />
+                    </label>
+                  </div>
+                </>
+              )}
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-bold">Captain’s WhatsApp
+                <label className="block text-sm font-bold">{solo ? "Your WhatsApp" : "Captain’s WhatsApp"}
                   <input required inputMode="tel" maxLength={15} value={f.phone} onChange={set("phone")} placeholder="98XXXXXXXX" className="form-input" />
                 </label>
                 <label className="block text-sm font-bold">Email
                   <input required type="email" maxLength={80} value={f.email} onChange={set("email")} placeholder="you@example.com" className="form-input" />
                 </label>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-bold">Division
-                  <select value={f.division} onChange={set("division")} className="form-input">
-                    {DIVS.map((d) => (
-                      <option key={d.key} value={d.key} disabled={count(d.key) >= state.settings.cap}>
-                        {d.label}{count(d.key) >= state.settings.cap ? " (full)" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block text-sm font-bold">Team level
-                  <select value={f.skill} onChange={set("skill")} className="form-input">
-                    {SKILLS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                  </select>
-                </label>
-              </div>
-              <label className="block text-sm font-bold">UPI transaction ID
+              <label className="block text-sm font-bold">{solo ? "Your level" : "Team level"}
+                <select value={f.skill} onChange={set("skill")} className="form-input">
+                  {SKILLS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </label>
+              <PayBox solo={solo} />
+              <label className="block text-sm font-bold">Step 2: UPI transaction ID
                 <input required maxLength={40} value={f.upiRef} onChange={set("upiRef")} placeholder="12 digit UTR number" className="form-input" />
+                <span className="mt-1 block text-xs font-normal text-[#687169]">Find it in your UPI app under the payment details, called UTR or UPI Ref No.</span>
               </label>
               <input tabIndex={-1} autoComplete="off" value={f.website} onChange={set("website")} className="hidden" aria-hidden="true" />
               {err && <p className="text-sm font-semibold text-[#b03a22]" role="alert">{err}</p>}

@@ -188,11 +188,14 @@ export function ScoreEditor({ s, m, onSave }: { s: State; m: Match; onSave: (a: 
 }
 
 /* ---------- entry fee with the early bird price ---------- */
-export function Price({ className = "" }: { className?: string }) {
-  if (!isEarlyBird()) return <span className={className}><b>{rupees(FEE.regular)}</b> per team</span>;
+export function Price({ className = "", solo = false }: { className?: string; solo?: boolean }) {
+  const regular = solo ? FEE.soloRegular : FEE.regular;
+  const early = solo ? FEE.soloEarly : FEE.early;
+  const unit = solo ? "per player" : "per team";
+  if (!isEarlyBird()) return <span className={className}><b>{rupees(regular)}</b> {unit}</span>;
   return (
     <span className={className}>
-      <s className="opacity-60">{rupees(FEE.regular)}</s> <b>{rupees(FEE.early)}</b> per team
+      <s className="opacity-60">{rupees(regular)}</s> <b>{rupees(early)}</b> {unit}
       <span className="ml-2 inline-block rounded-full bg-[#132116] px-2.5 py-0.5 align-middle text-[11px] font-bold uppercase tracking-wider text-[#b8ef3f]">
         Early bird till {FEE.earlyLabel}
       </span>

@@ -1,12 +1,12 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { EVENT, FEE, feeLine, rupees, siteUrl } from "../config";
+import { EVENT, FEE, feeFor, feeLine, isEarlyBird, rupees, siteUrl } from "../config";
 import {
   approveRegistration, deleteRegistration, login, logout, setRegStatus, updateState, useLive, useRegistrations, useUser,
   type Registration,
 } from "../lib/store";
 import {
   DIVS, buildKO, champion, divLabel, estimateFinish, fmtTime, generateSchedule, isBye, isDone, matchTime, nameOf,
-  propagate, startMin, statusMap, uid, type Div, type Match, type Settings, type State,
+  namesOf, propagate, startMin, statusMap, uid, type Div, type Match, type Settings, type State,
 } from "../lib/tournament";
 import { Icon } from "../components/Icon";
 import { Empty, PageTitle, ScoreEditor, Shell } from "../components/ui";
@@ -134,14 +134,14 @@ function Registrations({ regs }: { regs: Registration[] }) {
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[.14em] text-[#6b746c]">{divLabel(r.division)} · Level {r.skill}</p>
                   <h3 className="font-display text-3xl font-bold uppercase">{r.teamName}</h3>
-                  <p className="text-sm">{r.player1} and {r.player2}</p>
+                  <p className="text-sm">{r.player2 ? `${r.player1} and ${r.player2}` : "Solo entry"}</p>
                 </div>
                 <span className="text-xs text-[#8a928b]">{r.createdAt?.toDate?.().toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</span>
               </div>
               <dl className="mt-3 grid grid-cols-[110px_1fr] gap-y-1 text-sm">
                 <dt className="text-[#6d746e]">Fee due</dt>
                 <dd className="font-semibold">
-                  {rupees(r.createdAt?.toDate && r.createdAt.toDate().getTime() > new Date(FEE.earlyUntil).getTime() ? FEE.regular : FEE.early)}
+                  {rupees(feeFor(r.division === "solo", r.createdAt?.toDate ? r.createdAt.toDate().getTime() : Date.now()))}
                 </dd>
                 <dt className="text-[#6d746e]">UPI ref</dt><dd className="font-mono font-semibold">{r.upiRef}</dd>
                 <dt className="text-[#6d746e]">WhatsApp</dt>
@@ -175,8 +175,8 @@ const TEST_TEAMS: [string, string, string, Div, number][] = [
   ["Smash Brothers", "Rohan Mehta", "Aditya Jain", "mens", 5], ["Dink Dynasty", "Karan Patel", "Vivek Sharma", "mens", 4],
   ["Kitchen Kings", "Arjun Verma", "Siddharth Rao", "mens", 4], ["Rajwada Rallies", "Nikhil Agrawal", "Pranav Joshi", "mens", 3],
   ["Poha Paddlers", "Harsh Malviya", "Yash Tiwari", "mens", 3], ["Sarafa Smashers", "Ankit Gupta", "Mayank Soni", "mens", 2],
-  ["Dink Divas", "Ananya Singh", "Priya Sharma", "womens", 5], ["Court Queens", "Neha Jain", "Ritika Agrawal", "womens", 4],
-  ["Spin Sisters", "Megha Verma", "Pooja Tiwari", "womens", 3], ["Paddle Pataka", "Isha Malhotra", "Riya Choudhary", "womens", 2],
+  ["Ananya Singh", "Ananya Singh", "", "solo", 5], ["Neha Jain", "Neha Jain", "", "solo", 4],
+  ["Kunal Bhatia", "Kunal Bhatia", "", "solo", 3], ["Riya Choudhary", "Riya Choudhary", "", "solo", 2],
   ["Partners in Dink", "Varun Shah", "Aditi Mehta", "mixed", 5], ["Erne Express", "Sameer Khan", "Zoya Qureshi", "mixed", 4],
   ["Jalebi Jam", "Gaurav Sethi", "Payal Arora", "mixed", 3], ["Volley Llamas", "Parth Desai", "Mansi Thakur", "mixed", 2],
 ];
@@ -191,7 +191,7 @@ function Teams() {
     e.preventDefault();
     run(() => updateState((s) => {
       if (s.teams.some((t) => t.name.toLowerCase() === f.name.trim().toLowerCase())) return "That team name is taken";
-      s.teams.push({ id: uid(), name: f.name.trim(), p1: f.p1.trim(), p2: f.p2.trim(), div: f.div, skill: Number(f.skill), checked: false, regId: null });
+      s.teams.push({ id: uid(), name: f.name.trim(), p1: f.p1.trim(), p2: f.div === "solo" ? "" : f.p2.trim(), div: f.div, skill: Number(f.skill), checked: false, regId: null });
     }), `${f.name} added`).then((ok) => ok && setF({ ...f, name: "", p1: "", p2: "" }));
   };
   const patch = (id: string, change: (t: State["teams"][number]) => void) =>
@@ -209,7 +209,7 @@ function Teams() {
         <div className="mt-3 grid gap-4 md:grid-cols-5">
           <input required maxLength={40} placeholder="Team name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} className="form-input" />
           <input required maxLength={40} placeholder="Player 1" value={f.p1} onChange={(e) => setF({ ...f, p1: e.target.value })} className="form-input" />
-          <input required maxLength={40} placeholder="Player 2" value={f.p2} onChange={(e) => setF({ ...f, p2: e.target.value })} className="form-input" />
+          <input required={f.div !== "solo"} disabled={f.div === "solo"} maxLength={40} placeholder={f.div === "solo" ? "Not needed for solo" : "Player 2"} value={f.div === "solo" ? "" : f.p2} onChange={(e) => setF({ ...f, p2: e.target.value })} className="form-input disabled:opacity-50" />
           <select value={f.div} onChange={(e) => setF({ ...f, div: e.target.value as Div })} className="form-input">
             {DIVS.map((d) => <option key={d.key} value={d.key}>{d.label}</option>)}
           </select>
@@ -237,7 +237,7 @@ function Teams() {
                       <tr key={t.id} className="border-t border-[#eeeee8]">
                         <td className="px-5 py-3"><input type="checkbox" className="h-5 w-5 accent-[#789b2d]" checked={t.checked} onChange={(e) => patch(t.id, (x) => { x.checked = e.target.checked; })} aria-label={`${t.name} checked in`} /></td>
                         <td className="px-3 font-semibold">{t.name}</td>
-                        <td className="px-3">{t.p1} and {t.p2}</td>
+                        <td className="px-3">{namesOf(t)}</td>
                         <td className="px-3">
                           <select value={t.skill} onChange={(e) => patch(t.id, (x) => { x.skill = Number(e.target.value); })} className="rounded-lg border border-[#d8d9d1] px-2 py-1" aria-label={`${t.name} level`}>
                             {[1, 2, 3, 4, 5].map((v) => <option key={v}>{v}</option>)}
@@ -435,22 +435,23 @@ function Stories() {
   const { state } = useLive();
   const [story, setStory] = useState<StoryContent | null>(null);
   const base = siteUrl();
-  const counts = DIVS.map((d) => `${d.label}: ${state.teams.filter((t) => t.div === d.key).length} teams`);
+  const counts = DIVS.map((d) => `${d.label}: ${state.teams.filter((t) => t.div === d.key).length} ${d.key === "solo" ? "players" : "teams"}`);
   const st = statusMap(state);
   const liveNow = state.matches.filter((m) => st[m.id] === "live");
   const options: [string, string, StoryContent][] = [
     ["Registrations open", "Bring teams in", {
-      kicker: `${EVENT.dateLabel}, ${EVENT.city}`, title: ["Serve it.", "Own it."], highlight: 0,
-      lines: [EVENT.name, `${EVENT.venue}, ${EVENT.city}`, feeLine(), `Registration closes ${EVENT.registrationCloses}`],
-      footer: "Register now", url: base }],
+      kicker: `29.11 · ${EVENT.city}`, title: ["Serve it.", "Own it."], highlight: 1,
+      sticker: isEarlyBird() ? ["early bird", rupees(FEE.early)] : ["pull up", "29.11"],
+      lines: ["men’s doubles · mixed doubles · solo", `${EVENT.venue}, ${EVENT.city}`, feeLine(), `registration closes ${EVENT.registrationCloses}`],
+      footer: "Claim your spot", url: `${base}#/register` }],
     ["Last few spots", "Push before the deadline", {
-      kicker: "Filling fast", title: ["Last", "few spots"], highlight: 1, lines: counts, footer: "Grab your spot", url: base }],
+      kicker: "filling fast", title: ["Last few", "spots fr"], highlight: 1, sticker: ["don’t", "sleep"], lines: counts, footer: "Grab your spot", url: `${base}#/register` }],
     ["Schedule is out", "After you generate pools", {
-      kicker: "Pools are drawn", title: ["Schedule", "is out"], highlight: 1,
+      kicker: "pools are drawn", title: ["Schedule", "dropped"], highlight: 1, sticker: ["find", "your court"],
       lines: [`First serve ${fmtTime(startMin(state))}`, `${state.teams.length} teams, ${state.settings.courts} courts`, "Find your team and your court"],
       footer: "Find your team", url: `${base}#/live` }],
     ["Live now", "During the day", {
-      kicker: "Live now", title: ["On court", "now"], highlight: 1,
+      kicker: "live rn", title: ["On court", "right now"], highlight: 1, sticker: ["live", "scores"],
       lines: liveNow.length ? liveNow.slice(0, 4).map((m) => `Court ${m.court}: ${nameOf(state, m.a)} vs ${nameOf(state, m.b)}`) : ["Scores update live", `${EVENT.venue}, ${EVENT.city}`],
       footer: "Follow live", url: `${base}#/live` }],
     ...DIVS.flatMap((d): [string, string, StoryContent][] => {
@@ -458,8 +459,8 @@ function Stories() {
       if (!c) return [];
       const t = state.teams.find((x) => x.id === c);
       return [[`${d.label} champions`, nameOf(state, c), {
-        kicker: `${d.label} champions`, title: [nameOf(state, c), "Champions"], highlight: 1,
-        lines: [t ? `${t.p1} and ${t.p2}` : "", EVENT.name, `${EVENT.venue}, ${EVENT.city}`], footer: "See the bracket", url: `${base}#/live/bracket` }]];
+        kicker: `${d.label} champs`, title: [nameOf(state, c), "Champions"], highlight: 1, sticker: ["main", "characters"],
+        lines: [t ? namesOf(t) : "", EVENT.name, `${EVENT.venue}, ${EVENT.city}`], footer: "See the bracket", url: `${base}#/live/bracket` }]];
     }),
   ];
   return (

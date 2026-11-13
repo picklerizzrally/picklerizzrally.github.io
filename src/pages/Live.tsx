@@ -1,9 +1,9 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { EVENT, siteUrl } from "../config";
+import { EVENT, photo, siteUrl } from "../config";
 import { useLive } from "../lib/store";
 import {
   DIVS, champion, divLabel, fmtTime, isBye, isDone, koRounds, koStartMin, matchTime, nameOf, playersOf,
-  roundName, standings, statusMap, stats, type Div, type Match, type State,
+  namesOf, roundName, standings, statusMap, stats, type Div, type Match, type State,
 } from "../lib/tournament";
 import { Icon } from "../components/Icon";
 import { Empty, MatchRow, PageTitle, Shell, StatusPill } from "../components/ui";
@@ -27,9 +27,10 @@ export default function Live({ tab: initial }: { tab?: string }) {
 
   const liveNow = state.matches.filter((m) => statuses[m.id] === "live");
   const liveStory: StoryContent = {
-    kicker: "Live now",
-    title: [EVENT.name.replace(EVENT.brand, "").trim() || "Live", "On court now"],
+    kicker: "live rn",
+    title: ["On court", "right now"],
     highlight: 1,
+    sticker: ["live", "scores"],
     lines: liveNow.length
       ? liveNow.slice(0, 4).map((m) => `Court ${m.court}: ${nameOf(state, m.a)} vs ${nameOf(state, m.b)}`)
       : [`${st.played} of ${st.total} matches played`, `${EVENT.venue}, ${EVENT.city}`],
@@ -46,6 +47,14 @@ export default function Live({ tab: initial }: { tab?: string }) {
         Scores update on their own as the organiser enters them. No need to refresh.
       </PageTitle>
 
+      <div className="relative mb-8 h-40 overflow-hidden rounded-[28px] md:h-52">
+        <img src={photo("golden-hour-paddles.jpg")} alt="" className="absolute inset-0 h-full w-full object-cover object-[center_35%]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#102b1b]/85 via-[#102b1b]/40 to-transparent" />
+        <p className="font-display absolute bottom-5 left-6 text-3xl font-bold uppercase text-white md:text-5xl">
+          Live from {EVENT.venue}
+        </p>
+      </div>
+
       <div className="mb-8 grid gap-4 lg:grid-cols-[1fr_auto]">
         <div className="relative">
           <label htmlFor="find" className="sr-only">Find your team</label>
@@ -56,7 +65,7 @@ export default function Live({ tab: initial }: { tab?: string }) {
             <div className="absolute inset-x-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-[#d8d8cf] bg-white shadow-xl">
               {found.map((t) => (
                 <a key={t.id} href={`#/team/${t.id}`} className="flex items-center justify-between gap-3 border-b border-[#eeeee8] px-5 py-3 last:border-0 hover:bg-[#f4f3ed]">
-                  <span><b>{t.name}</b><small className="ml-2 text-[#6d746e]">{t.p1} and {t.p2}</small></span>
+                  <span><b>{t.name}</b><small className="ml-2 text-[#6d746e]">{namesOf(t)}</small></span>
                   <Icon name="chevron" size={17} />
                 </a>
               ))}

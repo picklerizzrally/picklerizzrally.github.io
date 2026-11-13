@@ -37,22 +37,33 @@ export const firebaseConfig = {
 
 // Entry fee: early bird until the end of 23 Nov (India time), regular price after that
 export const FEE = {
-  early: 1000,
+  early: 1000, // doubles team
   regular: 1200,
+  soloEarly: 500, // one player, solo entry
+  soloRegular: 600,
   earlyUntil: "2026-11-23T23:59:59+05:30",
   earlyLabel: "23 Nov",
 };
 export const rupees = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 export const isEarlyBird = () => Date.now() <= new Date(FEE.earlyUntil).getTime();
-export const currentFee = () => (isEarlyBird() ? FEE.early : FEE.regular);
+// Fee for a doubles team or a solo player, at a given moment (defaults to now)
+export const feeFor = (solo: boolean, at: number = Date.now()) => {
+  const early = at <= new Date(FEE.earlyUntil).getTime();
+  if (solo) return early ? FEE.soloEarly : FEE.soloRegular;
+  return early ? FEE.early : FEE.regular;
+};
+export const currentFee = (solo = false) => feeFor(solo);
 export const feeLine = () =>
   isEarlyBird()
-    ? `Early bird ${rupees(FEE.early)} per team till ${FEE.earlyLabel}, then ${rupees(FEE.regular)}`
-    : `Entry ${rupees(FEE.regular)} per team`;
+    ? `early bird ${rupees(FEE.early)}/team, ${rupees(FEE.soloEarly)} solo till ${FEE.earlyLabel}`
+    : `${rupees(FEE.regular)}/team, ${rupees(FEE.soloRegular)} solo`;
 // "78699 66517" style for showing numbers on the page
 export const prettyPhone = (n: string) => `${n.slice(-10, -5)} ${n.slice(-5)}`;
 
 export const isConfigured = !firebaseConfig.apiKey.startsWith("PASTE");
+
+// Photos live in public/images; this builds the right path on GitHub Pages
+export const photo = (name: string) => `${import.meta.env.BASE_URL}images/${name}`;
 
 // The public link people open from your story. Works automatically once the site is live.
 export const siteUrl = () => `${window.location.origin}${window.location.pathname}`;

@@ -3,7 +3,7 @@ import { EVENT, siteUrl } from "../config";
 import { useLive } from "../lib/store";
 import {
   champion, divLabel, fmtTime, isBye, isDone, koRounds, matchTime, nameOf, poolOfTeam, roundName, standings,
-  statusMap, teamMatches, teamOf, type Match,
+  namesOf, statusMap, teamMatches, teamOf, type Match,
 } from "../lib/tournament";
 import { Icon } from "../components/Icon";
 import { Empty, MatchRow, PageTitle, Shell } from "../components/ui";
@@ -41,21 +41,21 @@ export default function TeamPage({ id }: { id: string }) {
   const won = (m: Match) => (m.a === id ? m.sa! > m.sb! : m.sb! > m.sa!);
 
   const teamStory: StoryContent = isChamp
-    ? { kicker: `${divLabel(team.div)} champions`, title: [team.name, "Champions"], highlight: 1,
-        lines: [`${team.p1} and ${team.p2}`, `${EVENT.name}`, `${EVENT.venue}, ${EVENT.city}`], footer: "See the bracket", url: `${siteUrl()}#/team/${id}` }
+    ? { kicker: `${divLabel(team.div)} champs`, title: [team.name, "Champions"], highlight: 1, sticker: ["main", "characters"],
+        lines: [namesOf(team), `${EVENT.name}`, `${EVENT.venue}, ${EVENT.city}`], footer: "See the bracket", url: `${siteUrl()}#/team/${id}` }
     : last && won(last)
-      ? { kicker: label(last), title: [team.name, `Won ${score(last)}`], highlight: 1,
-          lines: [`vs ${nameOf(state, opp(last))}`, `${team.p1} and ${team.p2}`, next ? `Next: Court ${next.court}, ${fmtTime(matchTime(state, next)!)}` : `${wins} wins so far`],
-          footer: "Follow our run", url: `${siteUrl()}#/team/${id}` }
-      : { kicker: divLabel(team.div), title: [team.name, "We’re in"], highlight: 1,
-          lines: [`${team.p1} and ${team.p2}`, next ? `First up: Court ${next.court}, ${fmtTime(matchTime(state, next)!)}` : EVENT.dateLabel, `${EVENT.venue}, ${EVENT.city}`],
-          footer: "Cheer us on", url: `${siteUrl()}#/team/${id}` };
+      ? { kicker: label(last), title: [team.name, `W ${score(last)}`], highlight: 1, sticker: ["big", "W"],
+          lines: [`vs ${nameOf(state, opp(last))}`, namesOf(team), next ? `Next: Court ${next.court}, ${fmtTime(matchTime(state, next)!)}` : `${wins} wins so far`],
+          footer: team.p2 ? "Follow our run" : "Follow my run", url: `${siteUrl()}#/team/${id}` }
+      : { kicker: divLabel(team.div), title: [team.name, team.p2 ? "We’re in" : "I’m in"], highlight: 1, sticker: ["pull", "up"],
+          lines: [namesOf(team), next ? `First up: Court ${next.court}, ${fmtTime(matchTime(state, next)!)}` : EVENT.dateLabel, `${EVENT.venue}, ${EVENT.city}`],
+          footer: team.p2 ? "Cheer us on" : "Cheer me on", url: `${siteUrl()}#/team/${id}` };
 
   return (
     <Shell>
       <a href="#/live" className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-[#5b655e]"><Icon name="back" size={18} /> Live scores</a>
       <PageTitle eyebrow={`${divLabel(team.div)}${pool ? ` · Pool ${pool}` : ""}`} title={team.name}>
-        {team.p1} and {team.p2}
+        {namesOf(team)}
       </PageTitle>
 
       <div className="mb-8 grid gap-4 md:grid-cols-3">

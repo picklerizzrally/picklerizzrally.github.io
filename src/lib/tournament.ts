@@ -1,14 +1,17 @@
 // Tournament engine. Pure functions only, no Firebase or React in here,
 // so the same logic runs in the browser and in tests.
 
-export type Div = "mens" | "womens" | "mixed";
+export type Div = "mens" | "mixed" | "solo";
 
 export const DIVS: { key: Div; label: string; detail: string; color: string }[] = [
   { key: "mens", label: "Men’s Doubles", detail: "Open to all levels", color: "#b8ef3f" },
-  { key: "womens", label: "Women’s Doubles", detail: "Open to all levels", color: "#ff705c" },
   { key: "mixed", label: "Mixed Doubles", detail: "Open to all levels", color: "#50c9ff" },
+  { key: "solo", label: "Solo Entry", detail: "Singles, one player per entry", color: "#ff705c" },
 ];
 export const divLabel = (d: Div) => DIVS.find((x) => x.key === d)?.label ?? d;
+export const isSoloDiv = (d: Div) => d === "solo";
+// "Rohan Mehta and Aditya Jain", or just "Rohan Mehta" for a solo entry
+export const namesOf = (t: { p1: string; p2: string }) => (t.p2 ? `${t.p1} and ${t.p2}` : t.p1);
 
 export interface Team {
   id: string;
@@ -60,7 +63,7 @@ export interface State {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  courts: 3,
+  courts: 2,
   start: "07:45",
   matchMin: 15,
   poolSize: 4,
@@ -97,7 +100,7 @@ export const teamOf = (s: State, id: string | null) => (id ? s.teams.find((t) =>
 export const nameOf = (s: State, id: string | null) => (id ? teamOf(s, id)?.name ?? "Unknown team" : "TBD");
 export const playersOf = (s: State, id: string | null) => {
   const t = teamOf(s, id);
-  if (!t) return "";
+  if (!t || !t.p2) return ""; // solo entries show just their name
   const short = (n: string) => {
     const parts = n.trim().split(/\s+/);
     return parts.length > 1 ? `${parts[0][0]}. ${parts[parts.length - 1]}` : n;
