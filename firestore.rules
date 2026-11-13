@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Organisers: paste each organiser's User UID from Firebase console > Authentication > Users.
+    // Add a helper like this: ['FIRST_UID', 'SECOND_UID']
+    function isOrganiser() {
+      return request.auth != null && request.auth.uid in ['Gp3NctnaAgWY4bjGQHspt0bMYsq1'];
+    }
+
+    function str(v, min, max) {
+      return v is string && v.size() >= min && v.size() <= max;
+    }
+
+    match /tournaments/{tournamentId} {
+      // Everyone can see the schedule, scores and team names. Only organisers can change them.
+      allow read: if true;
+      allow write: if isOrganiser();
+
+      match /registrations/{regId} {
+        // Phone numbers and emails stay private to organisers.
+        allow read, update, delete: if isOrganiser();
+
+        // Anyone can register, but only with clean, expected fields.
+        allow create: if request.resource.data.keys().hasOnly(
+                           ['teamName', 'player1', 'player2', 'phone', 'email', 'division', 'skill', 'upiRef', 'status', 'createdAt'])
+                      && request.resource.data.keys().hasAll(
+                           ['teamName', 'player1', 'player2', 'phone', 'email', 'division', 'skill', 'upiRef', 'status', 'createdAt'])
+                      && str(request.resource.data.teamName, 1, 40)
+                      && str(request.resource.data.player1, 1, 40)
+                      && str(request.resource.data.player2, 1, 40)
+                      && request.resource.data.phone is string && request.resource.data.phone.matches('^[0-9]{10}$')
+                      && str(request.resource.data.email, 3, 80)
+                      && request.resource.data.division in ['mens', 'womens', 'mixed']
+                      && request.resource.data.skill is int && request.resource.data.skill >= 1 && request.resource.data.skill <= 5
+                      && str(request.resource.data.upiRef, 4, 40)
+                      && request.resource.data.status == 'pending'
+                      && request.resource.data.createdAt == request.time;
+      }
+    }
+  }
+}
