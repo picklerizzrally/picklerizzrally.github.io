@@ -90,13 +90,40 @@ export function emptyState(): State {
 }
 
 // Firestore data can be partial or old. Fill gaps so the UI never reads undefined.
+// Older test data used Men's, Women's and Mixed. Anything that is not solo now counts as doubles,
+// and old pools are merged into the doubles pools with fresh letters so fixtures still line up.
+function migrate(d: Partial<State>) {
+  const legacy = (div: string) => (div === "solo" ? "solo" : "doubles") as Div;
+  const pools = (d.pools ?? {}) as Record<string, Record<string, string[]>>;
+  const rename: Record<string, Record<string, string>> = {};
+  const merged: Partial<Record<Div, Record<string, string[]>>> = {};
+  for (const [div, letters] of Object.entries(pools)) {
+    const target = legacy(div);
+    const out = (merged[target] ??= {});
+    rename[div] = {};
+    for (const letter of Object.keys(letters).sort()) {
+      const next = String.fromCharCode(65 + Object.keys(out).length);
+      out[next] = letters[letter];
+      rename[div][letter] = next;
+    }
+  }
+  const matches = (Array.isArray(d.matches) ? d.matches : []).map((m) => ({
+    ...m,
+    div: legacy(m.div),
+    pool: m.pool && rename[m.div]?.[m.pool] ? rename[m.div][m.pool] : m.pool,
+  }));
+  const teams = (Array.isArray(d.teams) ? d.teams : []).map((t) => ({ ...t, div: legacy(t.div), checked: t.checked ?? false, regId: t.regId ?? null }));
+  return { pools: merged, matches, teams };
+}
+
 export function normalize(raw: unknown): State {
   const d = (raw ?? {}) as Partial<State>;
+  const m = migrate(d);
   return {
     settings: { ...DEFAULT_SETTINGS, ...(d.settings ?? {}) },
-    teams: Array.isArray(d.teams) ? d.teams.map((t) => ({ ...t, checked: t.checked ?? false, regId: t.regId ?? null })) : [],
-    pools: d.pools ?? {},
-    matches: Array.isArray(d.matches) ? d.matches : [],
+    teams: m.teams,
+    pools: m.pools,
+    matches: m.matches,
     generated: !!d.generated,
     koBuilt: !!d.koBuilt,
     backToBack: d.backToBack ?? 0,

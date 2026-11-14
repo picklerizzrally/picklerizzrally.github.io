@@ -8,6 +8,7 @@ export interface StoryContent {
   sticker?: string[]; // 1 or 2 short lines on the rotated starburst sticker
   lines: string[]; // supporting details, drawn as pills
   chips?: string[]; // short perks drawn as a row of pills under the title
+  prices?: { label: string; was?: string; now: string }[]; // entry prices, the old one struck through
   footer: string; // call to action on the ticket
   url: string; // where the QR code and link sticker point
 }
@@ -115,7 +116,7 @@ export async function renderStory(c: StoryContent): Promise<Blob> {
   const ctx = canvas.getContext("2d")!;
   ctx.textBaseline = "alphabetic";
   const chips = (c.chips ?? []).filter(Boolean);
-  const PHOTO_H = chips.length ? 1060 : 1180; // the photo gives up some height when there are perks to show
+  const PHOTO_H = chips.length ? (c.prices?.length ? 990 : 1060) : 1180; // the photo gives up some height when there are perks to show
 
   /* background and photo, fading into deep green */
   ctx.fillStyle = FOREST;
@@ -223,7 +224,8 @@ export async function renderStory(c: StoryContent): Promise<Blob> {
   }
 
   /* details: a neat list with a thin lime rule on the left */
-  const details = c.lines.filter(Boolean).slice(0, chips.length ? 3 : 4);
+  const prices = (c.prices ?? []).slice(0, 2);
+  const details = c.lines.filter(Boolean).slice(0, prices.length ? 2 : chips.length ? 3 : 4);
   const listTop = chipsBottom + (chips.length ? 36 : 40);
   const step = 70;
   ctx.fillStyle = LIME;
@@ -235,6 +237,40 @@ export async function renderStory(c: StoryContent): Promise<Blob> {
     ctx.fillStyle = i === 0 ? "#fff" : "rgba(244,243,237,0.82)";
     ctx.fillText(text, 104, ty);
   });
+
+  /* entry prices: old price struck through, new price big in lime */
+  if (prices.length) {
+    const top = listTop + details.length * step + 10;
+    const gap = 24;
+    const bw = (W - 140 - gap * (prices.length - 1)) / prices.length;
+    prices.forEach((p, i) => {
+      const x = 70 + i * (bw + gap);
+      boxPath(ctx, x, top, bw, 124, 30);
+      ctx.fillStyle = "rgba(255,255,255,0.08)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(184,239,63,0.45)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.font = `700 24px ${BODY}`;
+      ctx.fillStyle = "rgba(244,243,237,0.7)";
+      ctx.fillText(p.label.toUpperCase(), x + 26, top + 40);
+      let px = x + 26;
+      const base = top + 102;
+      if (p.was) {
+        ctx.font = `600 38px ${BODY}`;
+        ctx.fillStyle = "rgba(244,243,237,0.55)";
+        ctx.fillText(p.was, px, base);
+        const ww = ctx.measureText(p.was).width;
+        ctx.strokeStyle = CORAL;
+        ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.moveTo(px - 4, base - 13); ctx.lineTo(px + ww + 4, base - 13); ctx.stroke();
+        px += ww + 18;
+      }
+      ctx.font = `800 66px ${DISPLAY}`;
+      ctx.fillStyle = LIME;
+      ctx.fillText(p.now, px, base + 4);
+    });
+  }
 
   /* ticket stub with QR code */
   const th = 290;

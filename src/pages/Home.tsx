@@ -1,7 +1,15 @@
 import { useMemo, useState } from "react";
-import { CREDIT, EVENT, feeLine, isEarlyBird, FEE, PERKS, PRIZES, TOP_PRIZE, photo, rupees, prettyPhone, siteUrl } from "../config";
+import { CREDIT, EVENT, isEarlyBird, FEE, PERKS, PRIZES, TOP_PRIZE, photo, posterPrices, priceNote, registrationWindowOpen, rupees, prettyPhone, siteUrl } from "../config";
 import { useLive } from "../lib/store";
 import { DIVS, capFor, entriesIn, fmtTime, isDone, isFull, matchTime, spotsLeft, spotsText, startMin, statusMap, type Div } from "../lib/tournament";
+
+// Shown in the schedule before the real fixtures exist, so people can see how a match card reads
+const EXAMPLES: ["doubles" | "solo", string, string, string, string][] = [
+  ["doubles", "7:45 AM", "Team 1", "Team 2", "Court 1"],
+  ["solo", "7:45 AM", "Player 1", "Player 2", "Court 2"],
+  ["doubles", "8:00 AM", "Team 3", "Team 4", "Court 1"],
+  ["solo", "8:00 AM", "Player 3", "Player 4", "Court 2"],
+];
 
 const HOW = [
   ["Claim your spot", "Pick Doubles or Solo and fill in the form. Takes about two minutes."],
@@ -22,7 +30,7 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | Div>("all");
   const [story, setStory] = useState<StoryContent | null>(null);
-  const regOpen = state.settings.regOpen;
+  const regOpen = state.settings.regOpen && registrationWindowOpen();
 
   const statuses = useMemo(() => statusMap(state), [state]);
   const upcoming = useMemo(() => {
@@ -38,7 +46,8 @@ export default function Home() {
     highlight: 1,
     sticker: ["win", rupees(TOP_PRIZE)],
     chips: [`🏆 win up to ${rupees(TOP_PRIZE)}`, "🔥 filling fast", "🥤 water + refreshments", "🏓 2+ matches", "🧍 solo entry", "✨ all levels"],
-    lines: [`${spotsText(state, "doubles")} · ${spotsText(state, "solo")}`, feeLine(), `${EVENT.venue}, ${EVENT.city}`],
+    prices: posterPrices(),
+    lines: [`${spotsText(state, "doubles")} · ${spotsText(state, "solo")}`, priceNote()],
     footer: regOpen ? "Claim your spot" : "Follow live",
     url: regOpen ? `${siteUrl()}#/register` : `${siteUrl()}#/live`,
   };
@@ -182,21 +191,30 @@ export default function Home() {
                 </div>
                 <p className="max-w-sm text-white/80">Cash and a trophy for every podium finish. Water, ORS and refreshments for everyone, all day.</p>
               </div>
-              <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-                {([["Doubles", "Two players", PRIZES.doubles], ["Solo", "Singles, one player", PRIZES.solo]] as const).map(([title, sub, list]) => (
+              <div className="grid gap-5 lg:grid-cols-[1.35fr_1fr]">
+                {([["Doubles", "Two players", PRIZES.doubles, [1, 0, 2]], ["Solo", "Singles, one player", PRIZES.solo, [1, 0]]] as const).map(([title, sub, list, order]) => (
                   <div key={title} className="rounded-[28px] bg-white/10 p-5 ring-1 ring-white/20 backdrop-blur-md md:p-7">
-                    <div className="mb-5 flex items-baseline justify-between gap-3">
+                    <div className="mb-6 flex items-baseline justify-between gap-3">
                       <h3 className="font-display text-3xl font-bold uppercase">{title}</h3>
                       <span className="text-sm text-white/65">{sub}</span>
                     </div>
-                    <div className={`grid gap-3 ${list.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
-                      {list.map((p, i) => (
-                        <div key={p.place} className={`rounded-[22px] p-5 ${i === 0 ? "bg-[#b8ef3f] text-[#132116]" : "bg-[#102b1b]/70 ring-1 ring-white/15"}`}>
-                          <p className="text-sm font-bold uppercase tracking-wider opacity-70">{p.place}</p>
-                          <p className="font-display mt-1 text-4xl font-bold md:text-5xl">{rupees(p.cash)}</p>
-                          {p.trophy && <p className="mt-2 flex items-center gap-2 text-sm font-semibold"><Icon name="trophy" size={18} /> plus trophy</p>}
-                        </div>
-                      ))}
+                    <div className={`grid items-end gap-2 sm:gap-3 ${order.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+                      {order.map((idx) => {
+                        const p = list[idx];
+                        const first = idx === 0;
+                        const height = first ? "h-36 md:h-44" : idx === 1 ? "h-24 md:h-32" : "h-16 md:h-24";
+                        return (
+                          <div key={p.place} className="flex flex-col items-center text-center">
+                            {first && <span className="mb-2 rounded-full bg-[#b8ef3f] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#132116]">Champions</span>}
+                            <span className={`mb-2 grid h-10 w-10 place-items-center rounded-full shadow-lg ${first ? "bg-[#b8ef3f] text-[#132116]" : idx === 1 ? "bg-[#e7e9e2] text-[#132116]" : "bg-[#e8a26b] text-[#132116]"}`}><Icon name="trophy" size={20} /></span>
+                            <p className="font-display text-[1.7rem] font-bold leading-none sm:text-3xl md:text-4xl">{rupees(p.cash)}</p>
+                            <p className="mt-1 text-xs font-semibold text-white/70">{p.place}{p.trophy ? " + trophy" : ""}</p>
+                            <div className={`mt-3 flex w-full items-start justify-center rounded-t-2xl pt-3 ${height} ${first ? "bg-[#b8ef3f] text-[#132116]" : idx === 1 ? "bg-[#e7e9e2]/90 text-[#132116]" : "bg-[#e8a26b]/90 text-[#132116]"}`}>
+                              <span className="font-display text-4xl font-bold opacity-80 md:text-5xl">{idx + 1}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -264,9 +282,26 @@ export default function Home() {
               {upcoming.length ? (
                 upcoming.map((m) => <MatchRow key={m.id} s={state} m={m} status={statuses[m.id]} />)
               ) : (
-                <div className="px-7 py-14 text-center text-[#5b655e]">
-                  The match schedule goes up here once registration closes on {EVENT.registrationCloses}. Every score updates live.
-                </div>
+                <>
+                  {EXAMPLES.filter(([div]) => filter === "all" || filter === div).map(([div, time, a, b, court]) => (
+                    <div key={`${a}-${b}`} className="grid gap-4 border-b border-[#e4e4dc] px-5 py-5 md:grid-cols-[130px_1fr_150px_140px] md:items-center md:px-7">
+                      <div>
+                        <strong className="text-lg">{time}</strong>
+                        <span className="mt-1 block text-xs font-semibold uppercase tracking-wider text-[#7c847d]">Pool A</span>
+                      </div>
+                      <div>
+                        <span className="mb-2 block text-[11px] font-bold uppercase tracking-[.14em] text-[#6b746c]">{div === "solo" ? "Solo" : "Doubles"}</span>
+                        <div className="font-semibold">{a}</div>
+                        <div className="mt-1.5 font-semibold">{b}</div>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm font-semibold"><Icon name="location" size={18} /> {court}</div>
+                      <div><span className="inline-flex rounded-full border border-dashed border-[#b9bfb4] px-3 py-1.5 text-xs font-bold text-[#6d746e]">Example</span></div>
+                    </div>
+                  ))}
+                  <p className="px-7 py-6 text-center text-sm text-[#5b655e]">
+                    These are example fixtures. The real schedule goes up here once registration closes on {EVENT.registrationCloses}, and every score updates live.
+                  </p>
+                </>
               )}
             </div>
             <a href="#/live" className="mt-6 inline-flex items-center gap-3 rounded-full bg-[#132116] px-6 py-3.5 font-bold text-white">

@@ -10,7 +10,7 @@ A live tournament site for a pickleball event at Buddy's Pickleball Junction, In
 
 | For | Features |
 |---|---|
-| Players | Two categories (Doubles and Solo), registration with in-form UPI payment, early bird pricing that switches on its own, live schedule with "On court now" and "Next up", pool standings, knockout bracket, team search, a page per team with their next court and time |
+| Players | Two categories (Doubles and Solo), registration with in-form UPI payment and a payment screenshot or UTR, early bird pricing that switches on its own, live schedule with "On court now" and "Next up", pool standings, knockout bracket, team search, a page per team with their next court and time |
 | Organiser | Login, approve or reject registrations with the fee due shown, WhatsApp confirmations, walk-ins, check-in, one-click schedule, score entry with rule checks, automatic knockout bracket with a 3rd place match |
 | Instagram | One tap creates a 1080 x 1920 story with a QR code: registrations open, last few spots, schedule dropped, live now, team results, champions |
 

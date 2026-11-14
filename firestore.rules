@@ -3,7 +3,6 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Organisers: paste each organiser's User UID from Firebase console > Authentication > Users.
-    // Add a helper like this: ['FIRST_UID', 'SECOND_UID']
     function isOrganiser() {
       return request.auth != null && request.auth.uid in ['Gp3NctnaAgWY4bjGQHspt0bMYsq1'];
     }
@@ -23,21 +22,34 @@ service cloud.firestore {
 
         // Anyone can register, but only with clean, expected fields.
         allow create: if request.resource.data.keys().hasOnly(
-                           ['teamName', 'player1', 'player2', 'phone', 'email', 'division', 'skill', 'upiRef', 'status', 'createdAt'])
+                           ['teamName', 'player1', 'player2', 'phone', 'email', 'division', 'skill', 'upiRef', 'hasProof', 'status', 'createdAt'])
                       && request.resource.data.keys().hasAll(
                            ['teamName', 'player1', 'player2', 'phone', 'email', 'division', 'skill', 'upiRef', 'status', 'createdAt'])
                       && str(request.resource.data.teamName, 1, 40)
                       && str(request.resource.data.player1, 1, 40)
-                      // solo entries have no second player
                       && ((request.resource.data.division == 'solo' && request.resource.data.player2 == '')
                           || (request.resource.data.division != 'solo' && str(request.resource.data.player2, 1, 40)))
                       && request.resource.data.phone is string && request.resource.data.phone.matches('^[0-9]{10}$')
                       && str(request.resource.data.email, 3, 80)
                       && request.resource.data.division in ['doubles', 'solo']
                       && request.resource.data.skill is int && request.resource.data.skill >= 1 && request.resource.data.skill <= 5
-                      && str(request.resource.data.upiRef, 4, 40)
+                      && str(request.resource.data.upiRef, 0, 40)
+                      && request.resource.data.get('hasProof', false) is bool
+                      && (request.resource.data.upiRef.size() >= 4 || request.resource.data.get('hasProof', false) == true)
                       && request.resource.data.status == 'pending'
                       && request.resource.data.createdAt == request.time;
+      }
+
+      match /proofs/{proofId} {
+        // Payment screenshots: only organisers can see or delete them.
+        allow read, delete: if isOrganiser();
+
+        // A screenshot can only be added together with its registration, and must stay small.
+        allow create: if request.resource.data.keys().hasOnly(['image', 'createdAt'])
+                      && request.resource.data.image is string
+                      && request.resource.data.image.size() < 900000
+                      && request.resource.data.createdAt == request.time
+                      && existsAfter(/databases/$(database)/documents/tournaments/$(tournamentId)/registrations/$(proofId));
       }
     }
   }

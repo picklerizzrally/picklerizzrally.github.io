@@ -1,5 +1,5 @@
 import { Component, createContext, useContext, useState, type ReactNode } from "react";
-import { CREDIT, EVENT, FEE, isEarlyBird, rupees } from "../config";
+import { CREDIT, EVENT, FEE, isEarlyBird, registrationWindowOpen, rupees } from "../config";
 import { useLive } from "../lib/store";
 import {
   divLabel, fmtTime, isDone, matchTime, nameOf, playersOf, targetFor, validScore,
@@ -67,7 +67,7 @@ export function Shell({ children, active }: { children: ReactNode; active?: "liv
           </a>
           <nav className="flex items-center gap-2 text-sm font-semibold" aria-label="Pages">
             <a href="#/live" className={`rounded-full px-4 py-2.5 ${active === "live" ? "bg-white/15" : "hover:bg-white/10"}`}>Live</a>
-            {state.settings.regOpen && active !== "admin" && (
+            {state.settings.regOpen && registrationWindowOpen() && active !== "admin" && (
               <button onClick={() => openRegistration()} className="hidden rounded-full bg-[#b8ef3f] px-5 py-2.5 font-bold text-[#132116] sm:block">
                 Register
               </button>

@@ -1,7 +1,7 @@
-import { useMemo, useState, type FormEvent } from "react";
-import { EVENT, FEE, TOP_PRIZE, feeFor, feeLine, isEarlyBird, rupees, siteUrl } from "../config";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { EVENT, FEE, TOP_PRIZE, feeFor, isEarlyBird, posterPrices, priceNote, rupees, siteUrl } from "../config";
 import {
-  approveRegistration, deleteRegistration, login, logout, setRegStatus, updateState, useLive, useRegistrations, useUser,
+  approveRegistration, deleteRegistration, getProof, login, logout, setRegStatus, updateState, useLive, useRegistrations, useUser,
   type Registration,
 } from "../lib/store";
 import {
@@ -110,12 +110,32 @@ function useAction() {
 }
 
 /* ---------- registrations ---------- */
+// Full screen view of a payment screenshot, loaded only when the organiser asks for it
+function ProofViewer({ reg, onClose }: { reg: Registration; onClose: () => void }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => { getProof(reg.id).then(setSrc); }, [reg.id]);
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-[#07150d]/85 p-4" role="dialog" aria-modal="true" aria-label={`Payment screenshot from ${reg.teamName}`}>
+      <div className="relative w-full max-w-md rounded-[28px] bg-[#f4f3ed] p-5">
+        <button onClick={onClose} className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-[#e4e4dc]" aria-label="Close"><Icon name="x" /></button>
+        <h3 className="font-display pr-12 text-2xl font-bold uppercase">{reg.teamName}</h3>
+        <p className="mb-4 text-sm text-[#5b655e]">UPI ref: {reg.upiRef || "not given"}</p>
+        {src === null ? <Empty>Loading screenshot</Empty> : src ? (
+          <a href={src} target="_blank" rel="noreferrer"><img src={src} alt={`Payment screenshot from ${reg.teamName}`} className="max-h-[70vh] w-full rounded-2xl object-contain" /></a>
+        ) : <Empty>No screenshot found for this registration.</Empty>}
+      </div>
+    </div>
+  );
+}
+
 function Registrations({ regs }: { regs: Registration[] }) {
+  const [viewing, setViewing] = useState<Registration | null>(null);
   const [show, setShow] = useState<Registration["status"]>("pending");
   const { run, busy, note } = useAction();
   const list = regs.filter((r) => r.status === show);
   return (
     <div>
+      {viewing && <ProofViewer reg={viewing} onClose={() => setViewing(null)} />}
       <div className="mb-5 flex flex-wrap gap-2">
         {(["pending", "approved", "rejected"] as const).map((k) => (
           <button key={k} onClick={() => setShow(k)} className={`rounded-full px-4 py-2 text-sm font-bold capitalize ${show === k ? "bg-[#b8ef3f]" : "bg-white"}`}>
@@ -143,7 +163,9 @@ function Registrations({ regs }: { regs: Registration[] }) {
                 <dd className="font-semibold">
                   {rupees(feeFor(r.division === "solo", r.createdAt?.toDate ? r.createdAt.toDate().getTime() : Date.now()))}
                 </dd>
-                <dt className="text-[#6d746e]">UPI ref</dt><dd className="font-mono font-semibold">{r.upiRef}</dd>
+                <dt className="text-[#6d746e]">UPI ref</dt><dd className="font-mono font-semibold">{r.upiRef || "not given"}</dd>
+                <dt className="text-[#6d746e]">Screenshot</dt>
+                <dd>{r.hasProof ? <button onClick={() => setViewing(r)} className="font-semibold underline">View screenshot</button> : "not attached"}</dd>
                 <dt className="text-[#6d746e]">WhatsApp</dt>
                 <dd><a className="font-semibold underline" href={`https://wa.me/91${r.phone}`} target="_blank" rel="noreferrer">{r.phone}</a></dd>
                 <dt className="text-[#6d746e]">Email</dt><dd className="break-all">{r.email}</dd>
@@ -171,14 +193,10 @@ function Registrations({ regs }: { regs: Registration[] }) {
 }
 
 /* ---------- teams ---------- */
+// Practice entries named Team 1, Team 2 and so on, so they are easy to spot and remove
 const TEST_TEAMS: [string, string, string, Div, number][] = [
-  ["Smash Brothers", "Rohan Mehta", "Aditya Jain", "doubles", 5], ["Dink Dynasty", "Karan Patel", "Vivek Sharma", "doubles", 4],
-  ["Kitchen Kings", "Arjun Verma", "Siddharth Rao", "doubles", 4], ["Rajwada Rallies", "Nikhil Agrawal", "Pranav Joshi", "doubles", 3],
-  ["Poha Paddlers", "Harsh Malviya", "Yash Tiwari", "doubles", 3], ["Sarafa Smashers", "Ankit Gupta", "Mayank Soni", "doubles", 2],
-  ["Ananya Singh", "Ananya Singh", "", "solo", 5], ["Neha Jain", "Neha Jain", "", "solo", 4],
-  ["Kunal Bhatia", "Kunal Bhatia", "", "solo", 3], ["Riya Choudhary", "Riya Choudhary", "", "solo", 2],
-  ["Partners in Dink", "Varun Shah", "Aditi Mehta", "doubles", 5], ["Erne Express", "Sameer Khan", "Zoya Qureshi", "doubles", 4],
-  ["Jalebi Jam", "Gaurav Sethi", "Payal Arora", "doubles", 3], ["Volley Llamas", "Parth Desai", "Mansi Thakur", "doubles", 2],
+  ...Array.from({ length: 14 }, (_, i): [string, string, string, Div, number] => [`Team ${i + 1}`, `Player ${2 * i + 1}`, `Player ${2 * i + 2}`, "doubles", 5 - (i % 5)]),
+  ...Array.from({ length: 6 }, (_, i): [string, string, string, Div, number] => [`Solo Player ${i + 1}`, `Solo Player ${i + 1}`, "", "solo", 5 - (i % 5)]),
 ];
 
 function Teams() {
@@ -326,7 +344,7 @@ function Setup() {
 
       <div className="rounded-[28px] border border-dashed border-[#cfd2c9] p-6">
         <h3 className="font-display text-2xl font-bold uppercase">Test run</h3>
-        <p className="mt-2 text-sm text-[#5b655e]">Add 14 practice teams to try the full flow with friends, then remove them before the real day.</p>
+        <p className="mt-2 text-sm text-[#5b655e]">Add 14 practice Doubles teams (Team 1 to Team 14) and 6 Solo players to try the full flow with friends, then remove them before the real day.</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <button disabled={busy} onClick={() => testTeams(true)} className="rounded-full bg-white px-5 py-2.5 text-sm font-bold">Add test teams</button>
           <button disabled={busy} onClick={() => testTeams(false)} className="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-[#b03a22]">Remove test teams</button>
@@ -443,12 +461,14 @@ function Stories() {
       kicker: `29.11 · ${EVENT.city}`, title: ["Serve it.", "Own it."], highlight: 1,
       sticker: ["win", rupees(TOP_PRIZE)],
       chips: [`🏆 win up to ${rupees(TOP_PRIZE)}`, "🔥 filling fast", "🥤 water + refreshments", "🏓 2+ matches", "🧍 solo entry", "✨ all levels"],
-      lines: [`${spotsText(state, "doubles")} · ${spotsText(state, "solo")}`, feeLine(), `registration closes ${EVENT.registrationCloses}`],
+      prices: posterPrices(),
+      lines: [`${spotsText(state, "doubles")} · ${spotsText(state, "solo")}`, priceNote()],
       footer: "Claim your spot", url: `${base}#/register` }],
     ["Last few spots", "Push before the deadline", {
       kicker: "filling fast", title: ["Last few", "spots fr"], highlight: 1, sticker: isEarlyBird() ? ["early bird", rupees(FEE.early)] : ["don’t", "sleep"],
       chips: [`🏆 ${rupees(TOP_PRIZE)} top prize`, "🥤 water + refreshments", "🏓 2+ matches"],
-      lines: [spotsText(state, "doubles"), spotsText(state, "solo"), feeLine()], footer: "Grab your spot", url: `${base}#/register` }],
+      prices: posterPrices(),
+      lines: [`${spotsText(state, "doubles")} · ${spotsText(state, "solo")}`, priceNote()], footer: "Grab your spot", url: `${base}#/register` }],
     ["Schedule is out", "After you generate pools", {
       kicker: "pools are drawn", title: ["Schedule", "dropped"], highlight: 1, sticker: ["find", "your court"],
       lines: [`First serve ${fmtTime(startMin(state))}`, `${state.teams.length} teams, ${state.settings.courts} courts`, "Find your team and your court"],

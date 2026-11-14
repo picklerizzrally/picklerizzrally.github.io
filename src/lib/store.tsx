@@ -1,15 +1,16 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import {
-  addDoc,
   collection,
   deleteDoc,
   doc,
+  getDoc,
   onSnapshot,
   orderBy,
   query,
   runTransaction,
   serverTimestamp,
   updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from "firebase/auth";
 import { auth, db } from "../firebase";
@@ -28,6 +29,8 @@ const LiveContext = createContext<Live>({ state: emptyState(), status: "loading"
 
 const stateRef = () => doc(db!, "tournaments", EVENT.tournamentId);
 const regCol = () => collection(db!, "tournaments", EVENT.tournamentId, "registrations");
+// Payment screenshots live in their own collection, so the organiser's registration list stays light
+const proofCol = () => collection(db!, "tournaments", EVENT.tournamentId, "proofs");
 
 // One listener for the whole app, so a phone keeps a single live connection
 export function LiveProvider({ children }: { children: ReactNode }) {
@@ -92,6 +95,7 @@ export interface RegistrationInput {
   division: Div;
   skill: number;
   upiRef: string;
+  hasProof: boolean;
 }
 export interface Registration extends RegistrationInput {
   id: string;
@@ -99,10 +103,15 @@ export interface Registration extends RegistrationInput {
   createdAt?: { toDate: () => Date } | null;
 }
 
-export async function submitRegistration(r: RegistrationInput): Promise<string> {
+// Saves the registration and, if attached, the payment screenshot in one go (both or neither)
+export async function submitRegistration(r: RegistrationInput, proof = ""): Promise<string> {
   if (!db) return "Registration opens once the site is connected to its database.";
   try {
-    await addDoc(regCol(), { ...r, status: "pending", createdAt: serverTimestamp() });
+    const ref = doc(regCol());
+    const batch = writeBatch(db);
+    batch.set(ref, { ...r, hasProof: !!proof, status: "pending", createdAt: serverTimestamp() });
+    if (proof) batch.set(doc(proofCol(), ref.id), { image: proof, createdAt: serverTimestamp() });
+    await batch.commit();
     return "";
   } catch (e) {
     return friendly(e).includes("not allowed")
@@ -155,7 +164,22 @@ export async function setRegStatus(id: string, status: Registration["status"]) {
 }
 export async function deleteRegistration(id: string) {
   if (!db) return "Not connected";
-  try { await deleteDoc(doc(regCol(), id)); return ""; } catch (e) { return friendly(e); }
+  try {
+    await deleteDoc(doc(regCol(), id));
+    await deleteDoc(doc(proofCol(), id)).catch(() => {}); // fine if there was no screenshot
+    return "";
+  } catch (e) { return friendly(e); }
+}
+
+// Organiser only: fetch the payment screenshot for one registration
+export async function getProof(id: string): Promise<string> {
+  if (!db) return "";
+  try {
+    const snap = await getDoc(doc(proofCol(), id));
+    return snap.exists() ? String(snap.data().image ?? "") : "";
+  } catch {
+    return "";
+  }
 }
 
 /* ---------- organiser login ---------- */

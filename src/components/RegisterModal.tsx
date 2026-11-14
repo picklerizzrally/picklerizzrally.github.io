@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import QRCode from "qrcode";
-import { EVENT, currentFee, prettyPhone, rupees } from "../config";
+import { EVENT, currentFee, prettyPhone, rupees, registrationWindowOpen } from "../config";
 import { submitRegistration, useLive } from "../lib/store";
 import { DIVS, isFull, type Div } from "../lib/tournament";
 import { Icon } from "./Icon";
@@ -61,6 +61,40 @@ function PayBox({ solo }: { solo: boolean }) {
   );
 }
 
+
+// Shrinks a payment screenshot to a small JPEG so it fits in the database (well under 1 MB)
+async function compressImage(file: File): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = () => rej(new Error("unreadable"));
+      i.src = url;
+    });
+    let max = 1280;
+    let quality = 0.72;
+    let out = "";
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const scale = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      out = c.toDataURL("image/jpeg", quality);
+      if (out.length < 650000) return out;
+      max *= 0.8;
+      quality -= 0.1;
+    }
+    return out.length < 880000 ? out : "";
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; onClose: () => void }) {
   const { state } = useLive();
   const count = (d: Div) => state.teams.filter((t) => t.div === d).length;
@@ -71,6 +105,23 @@ export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; on
     skill: 3, upiRef: "", website: "",
   });
   const [busy, setBusy] = useState(false);
+  const [proof, setProof] = useState("");
+  const [proofNote, setProofNote] = useState("");
+  const pickProof = async (file?: File) => {
+    setProofNote("");
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return setProofNote("Please pick an image, like a screenshot of the payment.");
+    setProofNote("Attaching");
+    try {
+      const data = await compressImage(file);
+      if (!data) return setProofNote("That image is too large. Try a normal phone screenshot.");
+      setProof(data);
+      setProofNote("");
+      setErr("");
+    } catch {
+      setProofNote("Could not read that image. Take a screenshot and attach that instead.");
+    }
+  };
   const [err, setErr] = useState("");
   const [done, setDone] = useState(false);
   const solo = f.division === "solo";
@@ -82,6 +133,7 @@ export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; on
     if (f.website) return setDone(true); // hidden field, only bots fill it
     const phone = f.phone.replace(/\D/g, "").slice(-10);
     if (phone.length !== 10) return setErr("Enter a 10 digit WhatsApp number");
+    if (!proof && f.upiRef.trim().length < 4) return setErr("Add your UPI transaction ID or attach the payment screenshot");
     if (isFull(state, f.division)) return setErr("That category is full. Pick the other one.");
     setBusy(true);
     const msg = await submitRegistration({
@@ -89,8 +141,8 @@ export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; on
       teamName: solo ? f.player1.trim() : f.teamName.trim(),
       player1: f.player1.trim(),
       player2: solo ? "" : f.player2.trim(),
-      phone, email: f.email.trim(), division: f.division, skill: Number(f.skill), upiRef: f.upiRef.trim(),
-    });
+      phone, email: f.email.trim(), division: f.division, skill: Number(f.skill), upiRef: f.upiRef.trim(), hasProof: !!proof,
+    }, proof);
     setBusy(false);
     if (msg) setErr(msg); else setDone(true);
   };
@@ -110,7 +162,7 @@ export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; on
             </p>
             <button onClick={onClose} className="mt-7 rounded-full bg-[#132116] px-7 py-3.5 font-bold text-white">Done</button>
           </div>
-        ) : !state.settings.regOpen ? (
+        ) : !(state.settings.regOpen && registrationWindowOpen()) ? (
           <div className="py-10 text-center">
             <h3 className="font-display text-4xl font-bold uppercase">Registration is closed</h3>
             <p className="mt-3 text-[#667068]">Follow the live scores on the day.</p>
@@ -166,10 +218,30 @@ export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; on
                 </select>
               </label>
               <PayBox solo={solo} />
-              <label className="block text-sm font-bold">Step 2: UPI transaction ID
-                <input required maxLength={40} value={f.upiRef} onChange={set("upiRef")} placeholder="12 digit UTR number" className="form-input" />
-                <span className="mt-1 block text-xs font-normal text-[#687169]">Find it in your UPI app under the payment details, called UTR or UPI Ref No.</span>
-              </label>
+              <fieldset className="space-y-3">
+                <legend className="text-sm font-bold">Step 2: Proof of payment</legend>
+                <p className="text-xs text-[#687169]">Add the UPI transaction ID, attach the payment screenshot, or both.</p>
+                <label className="block text-sm font-bold">UPI transaction ID
+                  <input maxLength={40} value={f.upiRef} onChange={set("upiRef")} placeholder="12 digit UTR number" className="form-input" />
+                  <span className="mt-1 block text-xs font-normal text-[#687169]">Find it in your UPI app under the payment details, called UTR or UPI Ref No.</span>
+                </label>
+                {proof ? (
+                  <div className="flex items-center gap-4 rounded-[14px] border border-[#d8d9d1] bg-white p-3">
+                    <img src={proof} alt="Your payment screenshot" className="h-20 w-14 rounded-lg object-cover ring-1 ring-[#d8d9d1]" />
+                    <div className="flex-1 text-sm">
+                      <p className="flex items-center gap-2 font-bold text-[#29420d]"><Icon name="check" size={16} /> Screenshot attached</p>
+                      <button type="button" onClick={() => setProof("")} className="mt-1 font-semibold text-[#b03a22] underline">Remove</button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="flex cursor-pointer items-center justify-center gap-3 rounded-[14px] border-2 border-dashed border-[#c9cdc3] bg-white px-4 py-4 text-sm font-bold transition hover:border-[#789b2d] hover:bg-[#f7fbe9]">
+                    <Icon name="share" size={18} />
+                    Attach payment screenshot
+                    <input type="file" accept="image/*" className="sr-only" onChange={(e) => { pickProof(e.target.files?.[0]); e.target.value = ""; }} />
+                  </label>
+                )}
+                {proofNote && <p className="text-xs font-semibold text-[#5b655e]" role="status">{proofNote}</p>}
+              </fieldset>
               <input tabIndex={-1} autoComplete="off" value={f.website} onChange={set("website")} className="hidden" aria-hidden="true" />
               {err && <p className="text-sm font-semibold text-[#b03a22]" role="alert">{err}</p>}
               <p className="text-xs text-[#687169]">

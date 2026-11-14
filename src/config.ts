@@ -14,7 +14,8 @@ export const EVENT = {
   mapsUrl: "https://www.google.com/maps/search/?api=1&query=Buddy%27s+Pickleball+Junction+Mahatma+Gandhi+Rd+Indore+452001",
   parkingNote: "Near Treasure Island Mall, MG Road",
   gatesOpen: "7:00 AM",
-  registrationCloses: "24 November",
+  registrationCloses: "26 November",
+  registrationClosesAt: "2026-11-26T23:59:59+05:30", // the form switches off on its own after this
   upiId: "7869966517@sbi",
   prize: "Trophies",
   instagramUrl: "https://instagram.com/yourhandle",
@@ -57,6 +58,21 @@ export const feeLine = () =>
   isEarlyBird()
     ? `early bird ${rupees(FEE.early)}/team, ${rupees(FEE.soloEarly)} solo till ${FEE.earlyLabel}`
     : `${rupees(FEE.regular)}/team, ${rupees(FEE.soloRegular)} solo`;
+// Entry prices as poster tiles: struck-through regular price during early bird
+export const posterPrices = () =>
+  isEarlyBird()
+    ? [
+        { label: "Doubles · per team", was: rupees(FEE.regular), now: rupees(FEE.early) },
+        { label: "Solo · per player", was: rupees(FEE.soloRegular), now: rupees(FEE.soloEarly) },
+      ]
+    : [
+        { label: "Doubles · per team", now: rupees(FEE.regular) },
+        { label: "Solo · per player", now: rupees(FEE.soloRegular) },
+      ];
+export const priceNote = () =>
+  isEarlyBird() ? `price goes up after ${FEE.earlyLabel} · entries close 26 Nov` : "entries close 26 Nov";
+export const registrationWindowOpen = () => Date.now() <= new Date(EVENT.registrationClosesAt).getTime();
+
 // "78699 66517" style for showing numbers on the page
 export const prettyPhone = (n: string) => `${n.slice(-10, -5)} ${n.slice(-5)}`;
 
