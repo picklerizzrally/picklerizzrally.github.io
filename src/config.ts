@@ -81,26 +81,25 @@ export const isConfigured = !firebaseConfig.apiKey.startsWith("PASTE");
 // Prize money and trophies, shown on the home page and the stories
 export const PRIZES = {
   doubles: [
-    { place: "1st", cash: 6000, trophy: true },
-    { place: "2nd", cash: 3000, trophy: true },
-    { place: "3rd", cash: 1000, trophy: true },
+    { place: "Champions", cash: 6000, trophy: true },
+    { place: "Runners-up", cash: 3000, trophy: true },
+    { place: "Third place", cash: 1000, trophy: false }, // cash only, no trophy for 3rd
   ],
   solo: [
-    { place: "Winner", cash: 3000, trophy: true },
-    { place: "Runner-up", cash: 500, trophy: true },
+    { place: "Champion", cash: 2500, trophy: true },
+    { place: "Runner-up", cash: 1000, trophy: true },
   ],
 };
 export const TOP_PRIZE = PRIZES.doubles[0].cash;
 
 // What players get on the day. Keep this honest: only list what will really be there.
 export const PERKS = [
-  ["💧", "water + ORS on court"],
-  ["🥤", "refreshments sorted"],
-  ["🏆", "trophies + cash prizes"],
-  ["🏓", "2+ matches guaranteed"],
-  ["🧍", "solo? no partner needed"],
-  ["📱", "live scores on your phone"],
-  ["✨", "beginners welcome fr"],
+  ["💧", "Water and ORS on court"],
+  ["🥤", "Refreshments all day"],
+  ["🏆", "Trophies and cash prizes"],
+  ["🏓", "Two matches guaranteed"],
+  ["🧍", "Solo entry, no partner needed"],
+  ["📱", "Live scores on your phone"],
 ] as const;
 
 // Credit line at the bottom of every page

@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
 import QRCode from "qrcode";
-import { EVENT, currentFee, prettyPhone, rupees, registrationWindowOpen } from "../config";
+import { EVENT, currentFee, prettyPhone, rupees, registrationWindowOpen, siteUrl } from "../config";
 import { submitRegistration, useLive } from "../lib/store";
 import { DIVS, isFull, type Div } from "../lib/tournament";
 import { Icon } from "./Icon";
+import { ShareStory } from "./ShareStory";
+import type { StoryContent } from "../lib/story";
 import { Price } from "./ui";
 
 const SKILLS = [
@@ -124,6 +126,8 @@ export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; on
   };
   const [err, setErr] = useState("");
   const [done, setDone] = useState(false);
+  const [sent, setSent] = useState<{ name: string; first: string; solo: boolean; amount: number; proof: string } | null>(null);
+  const [story, setStory] = useState<StoryContent | null>(null);
   const solo = f.division === "solo";
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
 
@@ -144,7 +148,15 @@ export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; on
       phone, email: f.email.trim(), division: f.division, skill: Number(f.skill), upiRef: f.upiRef.trim(), hasProof: !!proof,
     }, proof);
     setBusy(false);
-    if (msg) setErr(msg); else setDone(true);
+    if (msg) return setErr(msg);
+    setSent({
+      name: solo ? f.player1.trim() : f.teamName.trim(),
+      first: f.player1.trim().split(/\s+/)[0] || "",
+      solo,
+      amount: currentFee(solo),
+      proof: f.upiRef.trim() ? `UTR ${f.upiRef.trim()}` : "Screenshot attached",
+    });
+    setDone(true);
   };
 
   return (
@@ -154,13 +166,69 @@ export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; on
           <Icon name="x" />
         </button>
         {done ? (
-          <div className="py-10 text-center">
-            <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#b8ef3f]"><Icon name="trophy" size={38} /></span>
-            <h3 className="font-display mt-7 text-4xl font-bold uppercase">You’re on the list.</h3>
-            <p className="mx-auto mt-3 max-w-sm text-[#667068]">
-              We’ll check your payment and confirm your spot on WhatsApp. You show up on the live page once it is confirmed.
-            </p>
-            <button onClick={onClose} className="mt-7 rounded-full bg-[#132116] px-7 py-3.5 font-bold text-white">Done</button>
+          <div className="relative py-6 text-center">
+            {/* a short confetti burst, skipped for people who prefer less motion */}
+            <div className="pointer-events-none absolute inset-x-0 -top-6 h-0 motion-reduce:hidden" aria-hidden="true">
+              {Array.from({ length: 26 }, (_, i) => (
+                <span
+                  key={i}
+                  className="confetti"
+                  style={{
+                    left: `${(i * 37) % 100}%`,
+                    background: ["#b8ef3f", "#ff705c", "#132116", "#50c9ff"][i % 4],
+                    animationDelay: `${(i % 7) * 70}ms`,
+                    width: i % 3 ? 8 : 12,
+                    height: i % 2 ? 14 : 8,
+                  }}
+                />
+              ))}
+            </div>
+            <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#b8ef3f]"><Icon name="check" size={40} /></span>
+            <h3 className="font-display mt-6 text-5xl font-bold uppercase leading-none">
+              Thank you{sent?.first ? `, ${sent.first}` : ""}!
+            </h3>
+            <p className="mx-auto mt-3 max-w-sm text-[#667068]">Your registration is in. Your spot is almost locked.</p>
+
+            {sent && (
+              <dl className="mx-auto mt-6 grid max-w-sm grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-[22px] bg-white p-5 text-left text-sm">
+                <dt className="text-[#6d746e]">{sent.solo ? "Player" : "Team"}</dt><dd className="text-right font-semibold">{sent.name}</dd>
+                <dt className="text-[#6d746e]">Category</dt><dd className="text-right font-semibold">{sent.solo ? "Solo" : "Doubles"}</dd>
+                <dt className="text-[#6d746e]">Entry fee</dt><dd className="text-right font-semibold">{rupees(sent.amount)}</dd>
+                <dt className="text-[#6d746e]">Payment</dt><dd className="truncate text-right font-semibold">{sent.proof}</dd>
+              </dl>
+            )}
+
+            <ol className="mx-auto mt-6 max-w-sm space-y-2 text-left text-sm text-[#425034]">
+              {["We match your payment with our UPI app", "You get a WhatsApp confirmation", "Your name shows up on the live page"].map((t, i) => (
+                <li key={t} className="flex items-center gap-3">
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#132116] text-xs font-bold text-white">{i + 1}</span>
+                  {t}
+                </li>
+              ))}
+            </ol>
+
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
+              {sent && (
+                <button
+                  onClick={() =>
+                    setStory({
+                      kicker: `${EVENT.dateShort} · ${EVENT.city}`,
+                      title: [sent.name, sent.solo ? "I’m in" : "We’re in"],
+                      highlight: 1,
+                      sticker: ["see you", "29.11"],
+                      lines: [sent.solo ? "Solo" : "Doubles", `${EVENT.venue}, ${EVENT.city}`],
+                      footer: sent.solo ? "Join me" : "Join us",
+                      url: `${siteUrl()}#/register`,
+                    })
+                  }
+                  className="flex items-center justify-center gap-3 rounded-full bg-[#b8ef3f] px-7 py-3.5 font-bold"
+                >
+                  <Icon name="share" size={18} /> Share that {sent.solo ? "I’m" : "we’re"} in
+                </button>
+              )}
+              <button onClick={onClose} className="rounded-full bg-[#132116] px-7 py-3.5 font-bold text-white">Done</button>
+            </div>
+            {story && <ShareStory content={story} onClose={() => setStory(null)} />}
           </div>
         ) : !(state.settings.regOpen && registrationWindowOpen()) ? (
           <div className="py-10 text-center">

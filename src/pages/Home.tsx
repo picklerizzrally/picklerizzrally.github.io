@@ -9,6 +9,8 @@ const EXAMPLES: ["doubles" | "solo", string, string, string, string][] = [
   ["solo", "7:45 AM", "Player 1", "Player 2", "Court 2"],
   ["doubles", "8:00 AM", "Team 3", "Team 4", "Court 1"],
   ["solo", "8:00 AM", "Player 3", "Player 4", "Court 2"],
+  ["doubles", "8:15 AM", "Team 5", "Team 6", "Court 1"],
+  ["doubles", "8:15 AM", "Team 7", "Team 8", "Court 2"],
 ];
 
 const HOW = [
@@ -180,52 +182,83 @@ export default function Home() {
         </section>
 
         <section id="prizes" className="px-5 pt-24 md:px-10 lg:px-16 lg:pt-32" aria-labelledby="prizes-title">
-          <div className="relative mx-auto max-w-[1312px] overflow-hidden rounded-[32px] bg-[#102b1b] text-white">
-            <img src={photo("golden-hour-paddles.jpg")} alt="" className="absolute inset-0 h-full w-full object-cover object-[center_30%]" />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(16_43_27/0.35)_0%,rgb(16_43_27/0.8)_45%,rgb(16_43_27/0.97)_100%)]" />
-            <div className="relative p-6 md:p-12 lg:p-16">
-              <div className="mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
-                <div>
-                  <p className="eyebrow text-[#b8ef3f]">What’s on the line</p>
-                  <h2 id="prizes-title" className="section-title">Play for<br />{rupees(TOP_PRIZE)}.</h2>
+          <div className="mx-auto grid max-w-[1312px] overflow-hidden rounded-[32px] bg-[#16291f] text-[#f4f3ed] lg:grid-cols-[.9fr_1.1fr]">
+            {/* left: photo with the headline */}
+            <div className="relative flex min-h-[560px] flex-col justify-between overflow-hidden p-7 md:p-10 lg:min-h-[760px] lg:p-12">
+              <img
+                src="https://images.unsplash.com/photo-1756477558468-b3e485757470?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&q=85&w=1200"
+                alt="Player lunging for a shot on a pickleball court"
+                loading="lazy"
+                onError={(e) => { e.currentTarget.src = photo("golden-hour-paddles.jpg"); }}
+                className="absolute inset-0 h-full w-full object-cover object-[center_30%]"
+              />
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(9_20_14/0.55)_0%,rgb(9_20_14/0.05)_30%,rgb(9_20_14/0.35)_60%,rgb(9_20_14/0.95)_100%)]" />
+              <div className="relative flex items-center justify-between gap-4 font-mono text-xs uppercase tracking-[.2em]">
+                <span className="flex items-center gap-3 font-medium">
+                  <span className="h-5 w-5 rotate-45 rounded-full border-[4px] border-[#b8ef3f] border-r-transparent" aria-hidden="true" />
+                  {EVENT.brand}
+                </span>
+                <span className="whitespace-nowrap text-white/70">{EVENT.city} / {EVENT.year}</span>
+              </div>
+              <div className="relative">
+                <p className="font-mono text-xs uppercase tracking-[.22em] text-[#b8ef3f]">What’s on the line</p>
+                <h2 id="prizes-title" className="mt-4 font-sans text-[clamp(3.2rem,6.5vw,6.2rem)] font-semibold uppercase leading-[.86] tracking-[-.06em]">
+                  Play for<br />{rupees(TOP_PRIZE)}.
+                </h2>
+                <div className="mt-8 flex items-center justify-between gap-4 border-t border-white/20 pt-5 font-mono text-xs uppercase tracking-[.18em]">
+                  <span>{EVENT.dateLabel.replace(" 2026", "")}</span>
+                  <span className="text-right">{EVENT.venue}</span>
                 </div>
-                <p className="max-w-sm text-white/80">Cash and a trophy for every podium finish. Water, ORS and refreshments for everyone, all day.</p>
               </div>
-              <div className="grid gap-5 lg:grid-cols-[1.35fr_1fr]">
-                {([["Doubles", "Two players", PRIZES.doubles, [1, 0, 2]], ["Solo", "Singles, one player", PRIZES.solo, [1, 0]]] as const).map(([title, sub, list, order]) => (
-                  <div key={title} className="rounded-[28px] bg-white/10 p-5 ring-1 ring-white/20 backdrop-blur-md md:p-7">
-                    <div className="mb-6 flex items-baseline justify-between gap-3">
-                      <h3 className="font-display text-3xl font-bold uppercase">{title}</h3>
-                      <span className="text-sm text-white/65">{sub}</span>
-                    </div>
-                    <div className={`grid items-end gap-2 sm:gap-3 ${order.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
-                      {order.map((idx) => {
-                        const p = list[idx];
-                        const first = idx === 0;
-                        const height = first ? "h-36 md:h-44" : idx === 1 ? "h-24 md:h-32" : "h-16 md:h-24";
-                        return (
-                          <div key={p.place} className="flex flex-col items-center text-center">
-                            {first && <span className="mb-2 rounded-full bg-[#b8ef3f] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#132116]">Champions</span>}
-                            <span className={`mb-2 grid h-10 w-10 place-items-center rounded-full shadow-lg ${first ? "bg-[#b8ef3f] text-[#132116]" : idx === 1 ? "bg-[#e7e9e2] text-[#132116]" : "bg-[#e8a26b] text-[#132116]"}`}><Icon name="trophy" size={20} /></span>
-                            <p className="font-display text-[1.7rem] font-bold leading-none sm:text-3xl md:text-4xl">{rupees(p.cash)}</p>
-                            <p className="mt-1 text-xs font-semibold text-white/70">{p.place}{p.trophy ? " + trophy" : ""}</p>
-                            <div className={`mt-3 flex w-full items-start justify-center rounded-t-2xl pt-3 ${height} ${first ? "bg-[#b8ef3f] text-[#132116]" : idx === 1 ? "bg-[#e7e9e2]/90 text-[#132116]" : "bg-[#e8a26b]/90 text-[#132116]"}`}>
-                              <span className="font-display text-4xl font-bold opacity-80 md:text-5xl">{idx + 1}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+            </div>
+
+            {/* right: the prize list */}
+            <div className="flex min-w-0 flex-col p-7 md:p-10 lg:p-14">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <p className="max-w-sm text-lg leading-relaxed text-white/60">A prize purse for the players who leave nothing on court.</p>
+                <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[.2em] text-[#b8ef3f]">
+                  <span className={`h-2 w-2 rounded-full ${regOpen ? "bg-[#b8ef3f]" : "bg-white/40"}`} />
+                  {regOpen ? "Entries open" : "Entries closed"}
+                </span>
+              </div>
+
+              {([["Doubles", "Per team", PRIZES.doubles], ["Solo", "Per player", PRIZES.solo]] as const).map(([title, unit, list]) => (
+                <div key={title} className="mt-12">
+                  <div className="flex items-baseline justify-between gap-4 border-b border-white/15 pb-4 font-mono text-xs uppercase tracking-[.22em]">
+                    <h3 className="font-sans text-4xl font-semibold normal-case tracking-[-.04em] text-[#b8ef3f] sm:text-5xl">{title}</h3>
+                    <span className="normal-case tracking-normal text-white/45">{unit}</span>
                   </div>
-                ))}
-              </div>
-              <ul className="mt-8 flex flex-wrap gap-3" aria-label="What you get on the day">
-                {PERKS.map(([emoji, text]) => (
-                  <li key={text} className="rounded-full bg-white/10 px-4 py-2.5 text-sm font-semibold ring-1 ring-white/20 backdrop-blur-md">
-                    <span aria-hidden="true">{emoji}</span> {text}
+                  <ul>
+                    {list.map((p, i) => (
+                      <li key={p.place} className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-white/15 py-5 sm:grid-cols-[3rem_minmax(0,1fr)_auto] sm:py-7">
+                        <span className="font-mono text-sm text-white/35">0{i + 1}</span>
+                        <span className="min-w-0">
+                          <span className="text-lg font-semibold sm:text-2xl">{p.place}</span>
+                          {p.trophy && <span className="mt-0.5 block text-sm text-white/45 sm:ml-3 sm:mt-0 sm:inline">+ trophy</span>}
+                        </span>
+                        <span className={`font-sans font-semibold tabular-nums tracking-[-.05em] ${i === 0 ? "text-4xl text-[#b8ef3f] sm:text-6xl" : "text-3xl sm:text-5xl"}`}>
+                          {rupees(p.cash)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+
+              <p className="mt-14 font-mono text-xs uppercase tracking-[.22em] text-white/60">On the day, for every player</p>
+              <ul className="mt-6 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+                {PERKS.map(([, text]) => (
+                  <li key={text} className="flex items-center gap-3 text-white/80">
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#b8ef3f] text-[#132116]"><Icon name="check" size={15} /></span>
+                    {text.charAt(0).toUpperCase() + text.slice(1)}
                   </li>
                 ))}
               </ul>
+
+              <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-white/15 pt-6 font-mono text-[11px] uppercase tracking-[.2em] text-white/40 lg:mt-auto">
+                <span>{EVENT.brand}</span>
+                <span>Registration closes {EVENT.registrationCloses}</span>
+              </div>
             </div>
           </div>
         </section>
@@ -357,7 +390,7 @@ export default function Home() {
                   <div key={d.key} className="rounded-[24px] bg-white/[.06] p-5 ring-1 ring-white/15">
                     <p className="text-xs font-bold uppercase tracking-[.16em] text-white/55">{d.label} entry</p>
                     <p className="mt-2 text-lg"><Price solo={d.key === "solo"} /></p>
-                    <p className="mt-2 text-sm text-white/55">{d.key === "solo" ? "Winner and runner-up take cash and a trophy." : "Top 3 take cash and a trophy."}</p>
+                    <p className="mt-2 text-sm text-white/55">{d.key === "solo" ? "Winner and runner-up take cash and a trophy." : "Top 3 take cash. Champions and runners-up also get a trophy."}</p>
                   </div>
                 ))}
               </div>
