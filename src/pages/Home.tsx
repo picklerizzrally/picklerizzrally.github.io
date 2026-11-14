@@ -49,7 +49,7 @@ export default function Home() {
     sticker: ["win", rupees(TOP_PRIZE)],
     chips: [`🏆 win up to ${rupees(TOP_PRIZE)}`, "🔥 filling fast", "🥤 water + refreshments", "🏓 2+ matches", "🧍 solo entry", "✨ all levels"],
     prices: posterPrices(),
-    lines: [`${spotsText(state, "doubles")} · ${spotsText(state, "solo")}`, priceNote()],
+    lines: [`${state.settings.capDoubles} spots for doubles · ${state.settings.capSolo} for solo`, priceNote()],
     footer: regOpen ? "Claim your spot" : "Follow live",
     url: regOpen ? `${siteUrl()}#/register` : `${siteUrl()}#/live`,
   };
@@ -184,7 +184,7 @@ export default function Home() {
         <section id="prizes" aria-labelledby="prizes-title">
           <div className="grid w-full overflow-hidden bg-[#16291f] text-[#f4f3ed] lg:grid-cols-[.9fr_1.1fr]">
             {/* left: photo with the headline */}
-            <div className="relative flex min-h-[560px] flex-col justify-between overflow-hidden p-7 md:p-10 lg:min-h-[760px] lg:p-12">
+            <div className="relative flex min-h-[340px] flex-col justify-between overflow-hidden p-6 md:p-8 lg:min-h-0 lg:p-10">
               <img
                 src="https://images.unsplash.com/photo-1756477558468-b3e485757470?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&q=85&w=1200"
                 alt="Player lunging for a shot on a pickleball court"
@@ -202,10 +202,10 @@ export default function Home() {
               </div>
               <div className="relative">
                 <p className="font-mono text-xs uppercase tracking-[.22em] text-[#b8ef3f]">What’s on the line</p>
-                <h2 id="prizes-title" className="mt-4 font-sans text-[clamp(3.2rem,6.5vw,6.2rem)] font-semibold uppercase leading-[.86] tracking-[-.06em]">
+                <h2 id="prizes-title" className="mt-3 font-sans text-[clamp(2.8rem,5vw,4.8rem)] font-semibold uppercase leading-[.86] tracking-[-.06em]">
                   Play for<br />{rupees(TOP_PRIZE)}.
                 </h2>
-                <div className="mt-8 flex items-center justify-between gap-4 border-t border-white/20 pt-5 font-mono text-xs uppercase tracking-[.18em]">
+                <div className="mt-6 flex items-center justify-between gap-4 border-t border-white/20 pt-4 font-mono text-xs uppercase tracking-[.18em]">
                   <span>{EVENT.dateLabel.replace(" 2026", "")}</span>
                   <span className="text-right">{EVENT.venue}</span>
                 </div>
@@ -213,30 +213,31 @@ export default function Home() {
             </div>
 
             {/* right: the prize list */}
-            <div className="flex min-w-0 flex-col p-7 md:p-10 lg:p-14">
+            <div className="flex min-w-0 flex-col p-6 md:p-8 lg:p-10">
               <div className="flex flex-wrap items-start justify-between gap-4">
-                <p className="max-w-sm text-lg leading-relaxed text-white/60">A prize purse for the players who leave nothing on court.</p>
+                <p className="max-w-sm leading-relaxed text-white/60">A prize purse for the players who leave nothing on court.</p>
                 <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[.2em] text-[#b8ef3f]">
                   <span className={`h-2 w-2 rounded-full ${regOpen ? "bg-[#b8ef3f]" : "bg-white/40"}`} />
                   {regOpen ? "Entries open" : "Entries closed"}
                 </span>
               </div>
 
+              <div className="mt-8 grid gap-8 xl:grid-cols-2 xl:gap-10">
               {([["Doubles", "Per team", PRIZES.doubles], ["Solo", "Per player", PRIZES.solo]] as const).map(([title, unit, list]) => (
-                <div key={title} className="mt-12">
-                  <div className="flex items-baseline justify-between gap-4 border-b border-white/15 pb-4 font-mono text-xs uppercase tracking-[.22em]">
-                    <h3 className="font-sans text-4xl font-semibold normal-case tracking-[-.04em] text-[#b8ef3f] sm:text-5xl">{title}</h3>
+                <div key={title}>
+                  <div className="flex items-baseline justify-between gap-4 border-b border-white/15 pb-3 font-mono text-xs uppercase tracking-[.22em]">
+                    <h3 className="font-sans text-3xl font-semibold normal-case tracking-[-.04em] text-[#b8ef3f] sm:text-4xl">{title}</h3>
                     <span className="normal-case tracking-normal text-white/45">{unit}</span>
                   </div>
                   <ul>
                     {list.map((p, i) => (
-                      <li key={p.place} className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-white/15 py-5 sm:grid-cols-[3rem_minmax(0,1fr)_auto] sm:py-7">
+                      <li key={p.place} className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-white/15 py-3 sm:grid-cols-[2.25rem_minmax(0,1fr)_auto] sm:py-3.5">
                         <span className="font-mono text-sm text-white/35">0{i + 1}</span>
                         <span className="min-w-0">
-                          <span className="text-lg font-semibold sm:text-2xl">{p.place}</span>
-                          {p.trophy && <span className="mt-0.5 block text-sm text-white/45 sm:ml-3 sm:mt-0 sm:inline">+ trophy</span>}
+                          <span className="text-lg font-semibold">{p.place}</span>
+                          {p.trophy && <span className="block text-xs text-white/45">+ trophy</span>}
                         </span>
-                        <span className={`font-sans font-semibold tabular-nums tracking-[-.05em] ${i === 0 ? "text-4xl text-[#b8ef3f] sm:text-6xl" : "text-3xl sm:text-5xl"}`}>
+                        <span className={`font-sans font-semibold tabular-nums tracking-[-.05em] ${i === 0 ? "text-3xl text-[#b8ef3f] sm:text-4xl" : "text-2xl sm:text-3xl"}`}>
                           {rupees(p.cash)}
                         </span>
                       </li>
@@ -244,18 +245,19 @@ export default function Home() {
                   </ul>
                 </div>
               ))}
+              </div>
 
-              <p className="mt-14 font-mono text-xs uppercase tracking-[.22em] text-white/60">On the day, for every player</p>
-              <ul className="mt-6 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+              <p className="mt-8 font-mono text-xs uppercase tracking-[.22em] text-white/60">On the day, for every player</p>
+              <ul className="mt-4 grid gap-x-6 gap-y-2.5 text-sm sm:grid-cols-2">
                 {PERKS.map(([, text]) => (
                   <li key={text} className="flex items-center gap-3 text-white/80">
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#b8ef3f] text-[#132116]"><Icon name="check" size={15} /></span>
+                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#b8ef3f] text-[#132116]"><Icon name="check" size={12} /></span>
                     {text.charAt(0).toUpperCase() + text.slice(1)}
                   </li>
                 ))}
               </ul>
 
-              <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-white/15 pt-6 font-mono text-[11px] uppercase tracking-[.2em] text-white/40 lg:mt-auto">
+              <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/15 pt-5 font-mono text-[11px] uppercase tracking-[.2em] text-white/40">
                 <span>{EVENT.brand}</span>
                 <span>Registration closes {EVENT.registrationCloses}</span>
               </div>

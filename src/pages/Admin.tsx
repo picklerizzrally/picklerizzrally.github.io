@@ -464,13 +464,13 @@ function Stories() {
       sticker: ["win", rupees(TOP_PRIZE)],
       chips: [`🏆 win up to ${rupees(TOP_PRIZE)}`, "🔥 filling fast", "🥤 water + refreshments", "🏓 2+ matches", "🧍 solo entry", "✨ all levels"],
       prices: posterPrices(),
-      lines: [`${spotsText(state, "doubles")} · ${spotsText(state, "solo")}`, priceNote()],
+      lines: [`${state.settings.capDoubles} spots for doubles · ${state.settings.capSolo} for solo`, priceNote()],
       footer: "Claim your spot", url: `${base}#/register` }],
     ["Last few spots", "Push before the deadline", {
       kicker: "filling fast", title: ["Last few", "spots fr"], highlight: 1, sticker: isEarlyBird() ? ["early bird", rupees(FEE.early)] : ["don’t", "sleep"],
       chips: [`🏆 ${rupees(TOP_PRIZE)} top prize`, "🥤 water + refreshments", "🏓 2+ matches"],
       prices: posterPrices(),
-      lines: [`${spotsText(state, "doubles")} · ${spotsText(state, "solo")}`, priceNote()], footer: "Grab your spot", url: `${base}#/register` }],
+      lines: [`${state.settings.capDoubles} spots for doubles · ${state.settings.capSolo} for solo`, priceNote()], footer: "Grab your spot", url: `${base}#/register` }],
     ["Schedule is out", "After you generate pools", {
       kicker: "pools are drawn", title: ["Schedule", "dropped"], highlight: 1, sticker: ["find", "your court"],
       lines: [`First serve ${fmtTime(startMin(state))}`, `${state.teams.length} teams, ${state.settings.courts} courts`, "Find your team and your court"],
