@@ -9,6 +9,9 @@ export const DIVS: { key: Div; label: string; detail: string; color: string }[] 
 ];
 export const divLabel = (d: Div) => DIVS.find((x) => x.key === d)?.label ?? d;
 export const isSoloDiv = (d: Div) => d === "solo";
+// Entry limit for a category, and whether it has filled up
+export const capFor = (s: State, d: Div) => (d === "solo" ? s.settings.capSolo : s.settings.capDoubles);
+export const isFull = (s: State, d: Div) => s.teams.filter((t) => t.div === d).length >= capFor(s, d);
 // "Rohan Mehta and Aditya Jain", or just "Rohan Mehta" for a solo entry
 export const namesOf = (t: { p1: string; p2: string }) => (t.p2 ? `${t.p1} and ${t.p2}` : t.p1);
 
@@ -48,7 +51,8 @@ export interface Settings {
   koTarget: number;
   breakMin: number;
   qualifiers: number;
-  cap: number; // max entries per category
+  capDoubles: number; // max doubles teams
+  capSolo: number; // max solo players
   regOpen: boolean;
 }
 
@@ -71,7 +75,8 @@ export const DEFAULT_SETTINGS: Settings = {
   koTarget: 15,
   breakMin: 30,
   qualifiers: 2,
-  cap: 16,
+  capDoubles: 24,
+  capSolo: 20,
   regOpen: true,
 };
 

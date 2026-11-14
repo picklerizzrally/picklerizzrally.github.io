@@ -225,7 +225,7 @@ function Teams() {
         const ts = state.teams.filter((t) => t.div === d.key);
         return (
           <section key={d.key}>
-            <h3 className="font-display mb-3 text-3xl font-bold uppercase">{d.label} <span className="text-[#8a928b]">{ts.length}/{state.settings.cap}</span></h3>
+            <h3 className="font-display mb-3 text-3xl font-bold uppercase">{d.label} <span className="text-[#8a928b]">{ts.length}/{d.key === "solo" ? state.settings.capSolo : state.settings.capDoubles}</span></h3>
             {!ts.length ? <Empty>No teams yet.</Empty> : (
               <div className="overflow-x-auto rounded-[24px] border border-[#d8d8cf] bg-white">
                 <table className="w-full text-sm">
@@ -301,7 +301,8 @@ function Setup() {
           {num("qualifiers", "Teams through per pool", 1, 4)}
           {num("poolTarget", "Pool games to", 7, 21)}
           {num("koTarget", "Knockout games to", 7, 21)}
-          {num("cap", "Max entries per category", 2, 64)}
+          {num("capDoubles", "Max doubles teams", 2, 64)}
+          {num("capSolo", "Max solo players", 2, 64)}
           <label className="flex items-center gap-3 self-end rounded-[14px] border border-[#d8d9d1] p-4 text-sm font-bold">
             <input type="checkbox" className="h-5 w-5 accent-[#789b2d]" checked={f.regOpen} onChange={(e) => setF({ ...f, regOpen: e.target.checked })} />
             Registration open
@@ -435,19 +436,19 @@ function Stories() {
   const { state } = useLive();
   const [story, setStory] = useState<StoryContent | null>(null);
   const base = siteUrl();
-  const counts = DIVS.map((d) => `${d.label}: ${state.teams.filter((t) => t.div === d.key).length} ${d.key === "solo" ? "players" : "teams"}`);
   const st = statusMap(state);
   const liveNow = state.matches.filter((m) => st[m.id] === "live");
   const options: [string, string, StoryContent][] = [
     ["Registrations open", "Bring teams in", {
       kicker: `29.11 · ${EVENT.city}`, title: ["Serve it.", "Own it."], highlight: 1,
       sticker: ["win", rupees(TOP_PRIZE)],
-      chips: [`🏆 win up to ${rupees(TOP_PRIZE)}`, "🥤 water + refreshments", "🏓 2+ matches", "🧍 solo entry", "✨ all levels"],
+      chips: [`🏆 win up to ${rupees(TOP_PRIZE)}`, "🔥 limited spots", "🥤 water + refreshments", "🏓 2+ matches", "🧍 solo entry", "✨ all levels"],
       lines: ["doubles · solo · open to everyone", feeLine(), `registration closes ${EVENT.registrationCloses}`],
       footer: "Claim your spot", url: `${base}#/register` }],
     ["Last few spots", "Push before the deadline", {
       kicker: "filling fast", title: ["Last few", "spots fr"], highlight: 1, sticker: isEarlyBird() ? ["early bird", rupees(FEE.early)] : ["don’t", "sleep"],
-      chips: [`🏆 ${rupees(TOP_PRIZE)} top prize`, "🥤 water + refreshments", "🏓 2+ matches"], lines: counts, footer: "Grab your spot", url: `${base}#/register` }],
+      chips: [`🏆 ${rupees(TOP_PRIZE)} top prize`, "🔥 limited spots", "🥤 water + refreshments", "🏓 2+ matches"],
+      lines: ["limited spots in doubles and solo", feeLine(), `registration closes ${EVENT.registrationCloses}`], footer: "Grab your spot", url: `${base}#/register` }],
     ["Schedule is out", "After you generate pools", {
       kicker: "pools are drawn", title: ["Schedule", "dropped"], highlight: 1, sticker: ["find", "your court"],
       lines: [`First serve ${fmtTime(startMin(state))}`, `${state.teams.length} teams, ${state.settings.courts} courts`, "Find your team and your court"],

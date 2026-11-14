@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { CREDIT, EVENT, feeLine, isEarlyBird, FEE, PERKS, PRIZES, TOP_PRIZE, photo, rupees, prettyPhone, siteUrl } from "../config";
 import { useLive } from "../lib/store";
-import { DIVS, fmtTime, isDone, matchTime, startMin, statusMap, type Div } from "../lib/tournament";
+import { DIVS, fmtTime, isDone, isFull, matchTime, startMin, statusMap, type Div } from "../lib/tournament";
 
 const HOW = [
   ["Claim your spot", "Pick Doubles or Solo and fill in the form. Takes about two minutes."],
@@ -37,14 +37,13 @@ export default function Home() {
     title: ["Serve it.", "Own it."],
     highlight: 1,
     sticker: ["win", rupees(TOP_PRIZE)],
-    chips: [`🏆 win up to ${rupees(TOP_PRIZE)}`, "🥤 water + refreshments", "🏓 2+ matches", "🧍 solo entry", "✨ all levels"],
+    chips: [`🏆 win up to ${rupees(TOP_PRIZE)}`, "🔥 limited spots", "🥤 water + refreshments", "🏓 2+ matches", "🧍 solo entry", "✨ all levels"],
     lines: ["doubles · solo · open to everyone", feeLine(), `${EVENT.venue}, ${EVENT.city}`],
     footer: regOpen ? "Claim your spot" : "Follow live",
     url: regOpen ? `${siteUrl()}#/register` : `${siteUrl()}#/live`,
   };
 
   const nav = [["Prizes", "prizes"], ["How it works", "how"], ["Categories", "divisions"], ["Venue", "venue"], ["FAQ", "faq"]];
-  const spotsLeft = (d: Div) => Math.max(0, state.settings.cap - state.teams.filter((t) => t.div === d).length);
   const scoring = `Pool games go to ${state.settings.poolTarget} and knockout games to ${state.settings.koTarget}, and you win by 2.`;
 
   return (
@@ -123,9 +122,13 @@ export default function Home() {
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#b8ef3f] opacity-75 motion-reduce:animate-none" />
                     <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#b8ef3f]" />
                   </span>
-                  {spotsLeft("doubles") ? `${spotsLeft("doubles")} doubles spots` : "Doubles is full"}
-                  {" · "}
-                  {spotsLeft("solo") ? `${spotsLeft("solo")} solo spots left` : "Solo is full"}
+                  {isFull(state, "doubles") && isFull(state, "solo")
+                    ? "Both categories are full"
+                    : isFull(state, "doubles")
+                      ? "Doubles is full · limited solo spots left"
+                      : isFull(state, "solo")
+                        ? "Solo is full · limited doubles spots left"
+                        : "Limited spots · grab yours before they’re gone"}
                 </p>
               )}
             </div>
@@ -135,8 +138,8 @@ export default function Home() {
               </p>
               <div className="mt-7 grid grid-cols-2 gap-6">
                 <div>
-                  <strong className="font-display text-4xl">{state.teams.length}</strong>
-                  <span className="mt-1 block text-xs uppercase tracking-widest text-white/60">Teams in</span>
+                  <strong className="font-display text-4xl">29.11</strong>
+                  <span className="mt-1 block text-xs uppercase tracking-widest text-white/60">Game day</span>
                 </div>
                 <div>
                   <strong className="font-display text-4xl">₹{TOP_PRIZE / 1000}K</strong>
@@ -293,7 +296,6 @@ export default function Home() {
               <div>
               <div className="divide-y divide-white/15 border-y border-white/15">
                 {DIVS.map((d, index) => {
-                  const n = state.teams.filter((t) => t.div === d.key).length;
                   return (
                     <button key={d.key} onClick={() => (regOpen ? openRegistration(d.key) : (window.location.hash = "#/live"))}
                       className="group grid w-full grid-cols-[52px_1fr_auto] items-center gap-4 py-8 text-left md:grid-cols-[70px_1fr_110px_auto]">
@@ -303,8 +305,8 @@ export default function Home() {
                         <small className="mt-1 block text-sm text-white/50">{d.detail}</small>
                       </span>
                       <span className="hidden text-sm md:block">
-                        <b style={{ color: d.color }}>{n} / {state.settings.cap}</b>
-                        <small className="block text-white/45">{d.key === "solo" ? "players in" : "teams filled"}</small>
+                        <b style={{ color: d.color }}>{isFull(state, d.key) ? "Full" : "Limited"}</b>
+                        <small className="block text-white/45">{isFull(state, d.key) ? "no spots left" : "spots only"}</small>
                       </span>
                       <span className="grid h-12 w-12 place-items-center rounded-full border border-white/25 transition group-hover:rotate-[-30deg] group-hover:bg-[#b8ef3f] group-hover:text-[#132116]">
                         <Icon name="arrow" />
