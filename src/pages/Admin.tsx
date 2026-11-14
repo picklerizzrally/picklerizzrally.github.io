@@ -460,15 +460,15 @@ function Stories() {
   const liveNow = state.matches.filter((m) => st[m.id] === "live");
   const options: [string, string, StoryContent][] = [
     ["Registrations open", "Bring teams in", {
-      kicker: `29.11 · ${EVENT.city}`, title: ["Serve it.", "Own it."], highlight: 1,
+      kicker: `Sun · ${EVENT.dateNumeric}`, title: ["Serve it.", "Own it."], highlight: 1,
       sticker: ["win", rupees(TOP_PRIZE)],
-      chips: [`🏆 win up to ${rupees(TOP_PRIZE)}`, "🔥 filling fast", "🥤 water + refreshments", "🏓 2+ matches", "🧍 solo entry", "✨ all levels"],
+      chips: [`win up to ${rupees(TOP_PRIZE)}`, "water + refreshments", "2+ matches", "solo entry", "all levels"],
       prices: posterPrices(),
       lines: [`${state.settings.capDoubles} spots for doubles · ${state.settings.capSolo} for solo`, priceNote()],
       footer: "Claim your spot", url: `${base}#/register` }],
     ["Last few spots", "Push before the deadline", {
       kicker: "filling fast", title: ["Last few", "spots fr"], highlight: 1, sticker: isEarlyBird() ? ["early bird", rupees(FEE.early)] : ["don’t", "sleep"],
-      chips: [`🏆 ${rupees(TOP_PRIZE)} top prize`, "🥤 water + refreshments", "🏓 2+ matches"],
+      chips: [`${rupees(TOP_PRIZE)} top prize`, "water + refreshments", "2+ matches"],
       prices: posterPrices(),
       lines: [`${state.settings.capDoubles} spots for doubles · ${state.settings.capSolo} for solo`, priceNote()], footer: "Grab your spot", url: `${base}#/register` }],
     ["Schedule is out", "After you generate pools", {

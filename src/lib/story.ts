@@ -22,6 +22,7 @@ const CORAL = "#ff705c";
 const CREAM = "#f4f3ed";
 const DISPLAY = '"Barlow Condensed", "Arial Narrow", sans-serif';
 const BODY = '"DM Sans", system-ui, sans-serif';
+const MONO = '"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace';
 
 async function fontsReady() {
   try {
@@ -30,6 +31,7 @@ async function fontsReady() {
       document.fonts.load(`700 60px "Barlow Condensed"`),
       document.fonts.load(`600 40px "DM Sans"`),
       document.fonts.load(`700 40px "DM Sans"`),
+      document.fonts.load(`500 24px "JetBrains Mono"`),
     ]);
   } catch {
     /* system fonts are fine as a fallback */
@@ -150,14 +152,15 @@ export async function renderStory(c: StoryContent): Promise<Blob> {
   pickleball(ctx, 112, 126, 24);
   ctx.fillStyle = "#fff";
   ctx.fillText(EVENT.brand, 150, 142);
-  ctx.font = `700 30px ${BODY}`;
-  const kick = c.kicker.toLowerCase();
+  // date pill, top right: bold, in lime so the date is the first thing people read
+  ctx.font = `800 40px ${DISPLAY}`;
+  const kick = c.kicker.toUpperCase();
   const kw = ctx.measureText(kick).width;
-  boxPath(ctx, W - 64 - kw - 56, 98, kw + 56, 56, 28);
-  ctx.fillStyle = "rgba(13,36,22,0.55)";
+  boxPath(ctx, W - 64 - kw - 60, 92, kw + 60, 68, 34);
+  ctx.fillStyle = LIME;
   ctx.fill();
-  ctx.fillStyle = "#fff";
-  ctx.fillText(kick, W - 64 - kw - 28, 136);
+  ctx.fillStyle = INK;
+  ctx.fillText(kick, W - 64 - kw - 30, 140);
 
   /* sticker: one clean coral starburst on the photo */
   if (c.sticker?.length) {
@@ -204,23 +207,28 @@ export async function renderStory(c: StoryContent): Promise<Blob> {
   /* perks: pills that wrap onto at most two rows, the first one in lime */
   let chipsBottom = PHOTO_H;
   if (chips.length) {
-    ctx.font = `700 30px ${BODY}`;
-    const padX = 26, chipH = 60, gap = 14, maxX = W - 70;
+    ctx.font = `500 24px ${MONO}`;
+    const spaced = "letterSpacing" in ctx;
+    if (spaced) (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = "3px";
+    const padX = 26, chipH = 58, gap = 12, maxX = W - 70, dot = 22;
     let cx = 70, cy = PHOTO_H + 30, row = 0;
     for (let i = 0; i < chips.length; i++) {
-      const text = chips[i];
-      const w = ctx.measureText(text).width + padX * 2;
+      const text = chips[i].toUpperCase();
+      const w = ctx.measureText(text).width + padX * 2 + dot;
       if (cx + w > maxX) { row++; cx = 70; cy += chipH + gap; }
       if (row > 1) break;
       boxPath(ctx, cx, cy, w, chipH, chipH / 2);
       ctx.fillStyle = i === 0 ? LIME : "rgba(255,255,255,0.08)";
       ctx.fill();
       if (i > 0) { ctx.strokeStyle = "rgba(184,239,63,0.45)"; ctx.lineWidth = 2; ctx.stroke(); }
+      ctx.fillStyle = i === 0 ? INK : LIME;
+      ctx.beginPath(); ctx.arc(cx + padX + 5, cy + chipH / 2, 5, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = i === 0 ? INK : CREAM;
-      ctx.fillText(text, cx + padX, cy + 41);
+      ctx.fillText(text, cx + padX + dot, cy + 37);
       cx += w + gap;
       chipsBottom = cy + chipH;
     }
+    if (spaced) (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = "0px";
   }
 
   /* details: a neat list with a thin lime rule on the left */
@@ -233,9 +241,22 @@ export async function renderStory(c: StoryContent): Promise<Blob> {
   ctx.fill();
   details.forEach((text, i) => {
     const ty = listTop + 40 + i * step;
-    fit(ctx, text, W - 210, 36, 24, "600", BODY);
-    ctx.fillStyle = i === 0 ? "#fff" : "rgba(244,243,237,0.82)";
-    ctx.fillText(text, 104, ty);
+    const ls = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
+    if (i === 0) {
+      // first line (the spots line): bold condensed capitals
+      const t = text.toUpperCase();
+      fit(ctx, t, W - 210, 46, 28, "800", DISPLAY);
+      ctx.fillStyle = "#fff";
+      ctx.fillText(t, 104, ty + 4);
+    } else {
+      // smaller lines: spaced monospace capitals
+      const t = text.toUpperCase();
+      if ("letterSpacing" in ctx) ls.letterSpacing = "2px";
+      fit(ctx, t, W - 210, 22, 16, "500", MONO);
+      ctx.fillStyle = "rgba(244,243,237,0.75)";
+      ctx.fillText(t, 104, ty);
+      if ("letterSpacing" in ctx) ls.letterSpacing = "0px";
+    }
   });
 
   /* entry prices: old price struck through, new price big in lime */
@@ -251,7 +272,7 @@ export async function renderStory(c: StoryContent): Promise<Blob> {
       ctx.strokeStyle = "rgba(184,239,63,0.45)";
       ctx.lineWidth = 2;
       ctx.stroke();
-      ctx.font = `700 24px ${BODY}`;
+      ctx.font = `500 22px ${MONO}`;
       ctx.fillStyle = "rgba(244,243,237,0.7)";
       ctx.fillText(p.label.toUpperCase(), x + 26, top + 40);
       let px = x + 26;
@@ -296,9 +317,13 @@ export async function renderStory(c: StoryContent): Promise<Blob> {
   ctx.font = `700 30px ${BODY}`;
   ctx.fillStyle = "rgba(19,33,22,0.75)";
   ctx.fillText("scan it or tap the link sticker", 400, ty + 168);
-  ctx.font = `600 28px ${BODY}`;
-  ctx.fillText(`${EVENT.dateShort.toLowerCase()} · ${EVENT.venue.toLowerCase()}`, 400, ty + 216);
-  ctx.fillText(EVENT.city.toLowerCase(), 400, ty + 256);
+  ctx.fillStyle = INK;
+  const dateLine = `${EVENT.dayName} · ${EVENT.dateNumeric}`.toUpperCase();
+  fit(ctx, dateLine, W - 400 - 110, 52, 30, "800", DISPLAY);
+  ctx.fillText(dateLine, 400, ty + 224);
+  ctx.font = `600 26px ${BODY}`;
+  ctx.fillStyle = "rgba(19,33,22,0.75)";
+  ctx.fillText(`${EVENT.venue.toLowerCase()}, ${EVENT.city.toLowerCase()}`, 400, ty + 262);
 
   return new Promise((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error("Could not create image"))), "image/png"));
 }

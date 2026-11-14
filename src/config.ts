@@ -6,6 +6,8 @@ export const EVENT = {
   tournamentId: "indore-open-2026", // database key; change it for your next tournament
   dateLabel: "29 November 2026",
   dateShort: "29 Nov 2026",
+  dateNumeric: "29-11-26",
+  dayName: "Sunday",
   city: "Indore",
   venue: "Buddy’s Pickleball",
   venueFullName: "Buddy’s Pickleball Junction",

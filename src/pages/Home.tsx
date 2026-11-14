@@ -43,11 +43,11 @@ export default function Home() {
   }, [state, filter]);
 
   const promoStory: StoryContent = {
-    kicker: `29.11 · ${EVENT.city}`,
+    kicker: `Sun · ${EVENT.dateNumeric}`,
     title: ["Serve it.", "Own it."],
     highlight: 1,
     sticker: ["win", rupees(TOP_PRIZE)],
-    chips: [`🏆 win up to ${rupees(TOP_PRIZE)}`, "🔥 filling fast", "🥤 water + refreshments", "🏓 2+ matches", "🧍 solo entry", "✨ all levels"],
+    chips: [`win up to ${rupees(TOP_PRIZE)}`, "water + refreshments", "2+ matches", "solo entry", "all levels"],
     prices: posterPrices(),
     lines: [`${state.settings.capDoubles} spots for doubles · ${state.settings.capSolo} for solo`, priceNote()],
     footer: regOpen ? "Claim your spot" : "Follow live",
