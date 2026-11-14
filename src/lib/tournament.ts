@@ -11,12 +11,13 @@ export const divLabel = (d: Div) => DIVS.find((x) => x.key === d)?.label ?? d;
 export const isSoloDiv = (d: Div) => d === "solo";
 // Entry limit for a category, and whether it has filled up
 export const capFor = (s: State, d: Div) => (d === "solo" ? s.settings.capSolo : s.settings.capDoubles);
-export const entriesIn = (s: State, d: Div) => s.teams.filter((t) => t.div === d).length;
+const offlineFor = (s: State, d: Div) => Math.max(0, Number(d === "solo" ? s.settings.offlineSolo : s.settings.offlineDoubles) || 0);
+export const entriesIn = (s: State, d: Div) => s.teams.filter((t) => t.div === d).length + offlineFor(s, d);
 export const spotsLeft = (s: State, d: Div) => Math.max(0, capFor(s, d) - entriesIn(s, d));
 export const isFull = (s: State, d: Div) => spotsLeft(s, d) === 0;
 // "7 of 24 doubles spots left" style text, used on the site and the stories
 export const spotsText = (s: State, d: Div) =>
-  isFull(s, d) ? `${d === "solo" ? "solo" : "doubles"} is full` : `${spotsLeft(s, d)} of ${capFor(s, d)} ${d === "solo" ? "solo" : "doubles"} spots left`;
+  isFull(s, d) ? `${d === "solo" ? "solo" : "doubles"} is full` : `${d === "solo" ? "solo" : "doubles"} ${entriesIn(s, d)}/${capFor(s, d)} booked`;
 // "Rohan Mehta and Aditya Jain", or just "Rohan Mehta" for a solo entry
 export const namesOf = (t: { p1: string; p2: string }) => (t.p2 ? `${t.p1} and ${t.p2}` : t.p1);
 
@@ -58,6 +59,8 @@ export interface Settings {
   qualifiers: number;
   capDoubles: number; // max doubles teams
   capSolo: number; // max solo players
+  offlineDoubles: number; // teams booked outside the site (cash, WhatsApp), counted in "booked"
+  offlineSolo: number;
   regOpen: boolean;
 }
 
@@ -82,6 +85,8 @@ export const DEFAULT_SETTINGS: Settings = {
   qualifiers: 2,
   capDoubles: 24,
   capSolo: 20,
+  offlineDoubles: 0,
+  offlineSolo: 0,
   regOpen: true,
 };
 

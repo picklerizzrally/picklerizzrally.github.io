@@ -321,6 +321,8 @@ function Setup() {
           {num("koTarget", "Knockout games to", 7, 21)}
           {num("capDoubles", "Max doubles teams", 2, 64)}
           {num("capSolo", "Max solo players", 2, 64)}
+          {num("offlineDoubles", "Doubles booked outside the site", 0, 64)}
+          {num("offlineSolo", "Solo booked outside the site", 0, 64)}
           <label className="flex items-center gap-3 self-end rounded-[14px] border border-[#d8d9d1] p-4 text-sm font-bold">
             <input type="checkbox" className="h-5 w-5 accent-[#789b2d]" checked={f.regOpen} onChange={(e) => setF({ ...f, regOpen: e.target.checked })} />
             Registration open

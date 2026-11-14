@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { LiveProvider } from "./lib/store";
+import { LiveProvider, useLive } from "./lib/store";
+import { registrationWindowOpen } from "./config";
+import { Icon } from "./components/Icon";
 import { ErrorBoundary, UIContext } from "./components/ui";
 import { RegisterModal } from "./components/RegisterModal";
 import Home from "./pages/Home";
@@ -23,6 +25,23 @@ function useRoute() {
   return route;
 }
 
+// Always-visible register button, shown while registration is open
+function FloatingRegister({ onClick }: { onClick: () => void }) {
+  const { state } = useLive();
+  if (!state.settings.regOpen || !registrationWindowOpen()) return null;
+  return (
+    <>
+      <div className="h-20 sm:hidden" aria-hidden="true" />
+      <button
+        onClick={onClick}
+        className="fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 flex items-center justify-center gap-3 rounded-full bg-[#b8ef3f] px-7 py-4 font-bold text-[#132116] shadow-[0_12px_32px_rgb(0_0_0/0.28)] ring-1 ring-[#132116]/10 transition hover:scale-[1.03] sm:inset-x-auto sm:right-6 sm:bottom-6"
+      >
+        Claim your spot <Icon name="arrow" />
+      </button>
+    </>
+  );
+}
+
 export default function App() {
   const [page, param] = useRoute();
   const [reg, setReg] = useState<{ open: boolean; div?: string }>({ open: false });
@@ -40,6 +59,7 @@ export default function App() {
       <LiveProvider>
         <UIContext.Provider value={{ openRegistration: (div) => setReg({ open: true, div }) }}>
           {view}
+          {page !== "admin" && !reg.open && <FloatingRegister onClick={() => setReg({ open: true })} />}
           {reg.open && <RegisterModal initialDiv={reg.div} onClose={() => {
             setReg({ open: false });
             if (page === "register") history.replaceState(null, "", window.location.pathname);

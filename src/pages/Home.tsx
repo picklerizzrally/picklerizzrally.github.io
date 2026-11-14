@@ -181,8 +181,8 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="prizes" className="px-5 pt-24 md:px-10 lg:px-16 lg:pt-32" aria-labelledby="prizes-title">
-          <div className="mx-auto grid max-w-[1312px] overflow-hidden rounded-[32px] bg-[#16291f] text-[#f4f3ed] lg:grid-cols-[.9fr_1.1fr]">
+        <section id="prizes" aria-labelledby="prizes-title">
+          <div className="grid w-full overflow-hidden bg-[#16291f] text-[#f4f3ed] lg:grid-cols-[.9fr_1.1fr]">
             {/* left: photo with the headline */}
             <div className="relative flex min-h-[560px] flex-col justify-between overflow-hidden p-7 md:p-10 lg:min-h-[760px] lg:p-12">
               <img
@@ -368,12 +368,12 @@ export default function Home() {
                         <strong className="font-display text-3xl uppercase md:text-4xl">{d.label}</strong>
                         <small className="mt-1 block text-sm text-white/50">{d.detail}</small>
                         <small className="mt-1 block text-sm font-bold md:hidden" style={{ color: d.color }}>
-                          {entriesIn(state, d.key)} / {capFor(state, d.key)} · {isFull(state, d.key) ? "full" : `${spotsLeft(state, d.key)} spots left`}
+                          {entriesIn(state, d.key)}/{capFor(state, d.key)} {isFull(state, d.key) ? "· full" : "booked"}
                         </small>
                       </span>
                       <span className="hidden text-sm md:block">
-                        <b style={{ color: d.color }}>{entriesIn(state, d.key)} / {capFor(state, d.key)}</b>
-                        <small className="block text-white/45">{isFull(state, d.key) ? "full" : `${spotsLeft(state, d.key)} spots left`}</small>
+                        <b className="text-lg" style={{ color: d.color }}>{entriesIn(state, d.key)}/{capFor(state, d.key)}</b>
+                        <small className="block text-white/45">{isFull(state, d.key) ? "full" : "booked"}</small>
                         <span className="mt-2 block h-1.5 w-full overflow-hidden rounded-full bg-white/15" aria-hidden="true">
                           <span className="block h-full rounded-full" style={{ width: `${Math.min(100, (entriesIn(state, d.key) / capFor(state, d.key)) * 100)}%`, background: d.color }} />
                         </span>
@@ -427,8 +427,8 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="venue" className="px-5 py-24 md:px-10 lg:px-16 lg:py-32">
-          <div className="mx-auto grid max-w-[1312px] overflow-hidden rounded-[32px] bg-[#ff6f5a] lg:grid-cols-2">
+        <section id="venue" className="mt-24 lg:mt-32">
+          <div className="grid w-full overflow-hidden bg-[#ff6f5a] lg:grid-cols-2">
             <div className="flex flex-col justify-between p-8 md:p-12 lg:p-16">
               <div>
                 <p className="eyebrow">Tournament central</p>
@@ -463,7 +463,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="faq" className="px-5 pb-24 md:px-10 lg:px-16 lg:pb-32" aria-labelledby="faq-title">
+        <section id="faq" className="px-5 py-24 md:px-10 lg:px-16 lg:py-32" aria-labelledby="faq-title">
           <div className="mx-auto grid max-w-[1312px] gap-10 lg:grid-cols-[.8fr_1.2fr] lg:gap-16">
             <div>
               <p className="eyebrow">Good questions</p>
@@ -500,8 +500,8 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="px-5 pb-8 md:px-10 lg:px-16">
-          <div className="mx-auto flex max-w-[1312px] flex-col items-center rounded-[32px] bg-[#b8ef3f] px-6 py-20 text-center">
+        <section>
+          <div className="flex w-full flex-col items-center bg-[#b8ef3f] px-6 py-24 text-center lg:py-32">
             <Icon name="trophy" size={42} />
             <h2 className="font-display mt-6 text-5xl font-bold uppercase leading-none tracking-[-.04em] md:text-7xl">Your court is calling.</h2>
             <p className="mt-5 max-w-md text-[#425034]">

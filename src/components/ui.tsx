@@ -61,10 +61,19 @@ export function Shell({ children, active }: { children: ReactNode; active?: "liv
       <LiveBanner />
       <header className="bg-[#102b1b] text-white">
         <div className="mx-auto flex h-[76px] max-w-[1312px] items-center justify-between gap-3 px-5 md:px-10">
+          <div className="flex items-center gap-3">
+          <button
+            onClick={() => (window.history.length > 1 ? window.history.back() : (window.location.hash = ""))}
+            className="grid h-10 w-10 place-items-center rounded-full border border-white/25 hover:bg-white/10"
+            aria-label="Go back"
+          >
+            <Icon name="back" size={18} />
+          </button>
           <a href="#" className="flex items-center gap-3" aria-label={`${EVENT.brand} home`}>
             <LogoMark />
             <span className="font-display text-[23px] font-bold tracking-[-.01em]">{EVENT.brand}</span>
           </a>
+          </div>
           <nav className="flex items-center gap-2 text-sm font-semibold" aria-label="Pages">
             <a href="#/live" className={`rounded-full px-4 py-2.5 ${active === "live" ? "bg-white/15" : "hover:bg-white/10"}`}>Live</a>
             {state.settings.regOpen && registrationWindowOpen() && active !== "admin" && (
