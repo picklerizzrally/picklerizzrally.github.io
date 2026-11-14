@@ -1,5 +1,5 @@
 import { Component, createContext, useContext, useState, type ReactNode } from "react";
-import { EVENT, FEE, isEarlyBird, rupees } from "../config";
+import { CREDIT, EVENT, FEE, isEarlyBird, rupees } from "../config";
 import { useLive } from "../lib/store";
 import {
   divLabel, fmtTime, isDone, matchTime, nameOf, playersOf, targetFor, validScore,
@@ -78,6 +78,10 @@ export function Shell({ children, active }: { children: ReactNode; active?: "liv
       <main className="mx-auto max-w-[1312px] px-5 pb-20 pt-10 md:px-10">{children}</main>
       <footer className="mx-auto max-w-[1312px] border-t border-[#ccd0c8] px-5 py-8 text-sm text-[#6a736c] md:px-10">
         © {EVENT.year} {EVENT.name}, {EVENT.city}
+        <span className="mt-1 block text-xs">
+          Website made by {CREDIT.name}.{" "}
+          <a href={CREDIT.contactUrl} target="_blank" rel="noreferrer" className="font-semibold text-[#132116] underline">{CREDIT.contactLabel}</a>
+        </span>
       </footer>
     </div>
   );

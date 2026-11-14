@@ -1,12 +1,11 @@
 // Tournament engine. Pure functions only, no Firebase or React in here,
 // so the same logic runs in the browser and in tests.
 
-export type Div = "mens" | "mixed" | "solo";
+export type Div = "doubles" | "solo";
 
 export const DIVS: { key: Div; label: string; detail: string; color: string }[] = [
-  { key: "mens", label: "Men’s Doubles", detail: "Open to all levels", color: "#b8ef3f" },
-  { key: "mixed", label: "Mixed Doubles", detail: "Open to all levels", color: "#50c9ff" },
-  { key: "solo", label: "Solo Entry", detail: "Singles, one player per entry", color: "#ff705c" },
+  { key: "doubles", label: "Doubles", detail: "Two players, open to everyone", color: "#b8ef3f" },
+  { key: "solo", label: "Solo", detail: "Singles, one player, open to everyone", color: "#ff705c" },
 ];
 export const divLabel = (d: Div) => DIVS.find((x) => x.key === d)?.label ?? d;
 export const isSoloDiv = (d: Div) => d === "solo";
@@ -37,6 +36,7 @@ export interface Match {
   sb: number | null;
   slot: number | null;
   court: number | null;
+  bronze?: boolean; // the 3rd place match between the two semifinal losers
 }
 
 export interface Settings {
@@ -48,7 +48,7 @@ export interface Settings {
   koTarget: number;
   breakMin: number;
   qualifiers: number;
-  cap: number; // max teams per division
+  cap: number; // max entries per category
   regOpen: boolean;
 }
 
@@ -293,6 +293,12 @@ export function koRounds(s: State, div: Div): Match[][] {
   const n = ms.length ? Math.max(...ms.map((m) => m.round)) + 1 : 0;
   return Array.from({ length: n }, (_, r) => ms.filter((m) => m.round === r).sort((a, b) => a.pos - b.pos));
 }
+// Label for any knockout match, including the 3rd place match
+export function koLabel(s: State, m: Match) {
+  if (m.bronze) return "3rd place";
+  return roundName(koRounds(s, m.div).length, m.round);
+}
+
 export function roundName(total: number, r: number) {
   const d = total - 1 - r;
   if (d === 0) return "Final";
@@ -301,6 +307,8 @@ export function roundName(total: number, r: number) {
   return `Round of ${2 ** (d + 1)}`;
 }
 export const isBye = (m: Match) => m.stage === "ko" && m.round === 0 && (!m.a || !m.b);
+// Categories that play a 3rd place match (3rd place wins prize money in doubles)
+export const hasBronze = (d: Div) => d !== "solo";
 
 export function koWinner(m: Match): string | null {
   if (m.round === 0 && m.stage === "ko") {
@@ -311,13 +319,22 @@ export function koWinner(m: Match): string | null {
   return null;
 }
 
+export function koLoser(m: Match): string | null {
+  const w = koWinner(m);
+  if (!w || !m.a || !m.b) return null;
+  return w === m.a ? m.b : m.a;
+}
+
 export function propagate(s: State) {
   for (const { key } of DIVS) {
     const rounds = koRounds(s, key);
     for (let r = 1; r < rounds.length; r++) {
       rounds[r].forEach((m) => {
-        const na = rounds[r - 1][2 * m.pos] ? koWinner(rounds[r - 1][2 * m.pos]) : null;
-        const nb = rounds[r - 1][2 * m.pos + 1] ? koWinner(rounds[r - 1][2 * m.pos + 1]) : null;
+        const prev = rounds[r - 1];
+        const take = m.bronze ? koLoser : koWinner; // the 3rd place match takes the semifinal losers
+        const ia = m.bronze ? 0 : 2 * m.pos;
+        const na = prev[ia] ? take(prev[ia]) : null;
+        const nb = prev[ia + 1] ? take(prev[ia + 1]) : null;
         if (m.a !== na || m.b !== nb) { m.a = na; m.b = nb; m.sa = null; m.sb = null; }
       });
     }
@@ -368,10 +385,15 @@ export function buildKO(s: State) {
       }
     });
     s.matches.push(...r0);
+    let lastRound = 0;
     for (let len = size / 4, r = 1; len >= 1; len /= 2, r++) {
+      lastRound = r;
       for (let p = 0; p < len; p++) {
         s.matches.push({ id: uid(), div: key, stage: "ko", pool: null, round: r, pos: p, a: null, b: null, sa: null, sb: null, slot: null, court: null });
       }
+    }
+    if (size >= 4 && hasBronze(key)) {
+      s.matches.push({ id: uid(), div: key, stage: "ko", pool: null, round: lastRound, pos: 1, a: null, b: null, sa: null, sb: null, slot: null, court: null, bronze: true });
     }
   }
   s.koBuilt = true;
@@ -394,6 +416,7 @@ export function scheduleKO(s: State) {
         if (isBye(m)) { m.slot = null; m.court = null; } else batch.push(m);
       });
     }
+    batch.sort((x, y) => Number(!!y.bronze) - Number(!!x.bronze)); // 3rd place matches before the finals
     batch.forEach((m, i) => { m.slot = slot + Math.floor(i / C); m.court = (i % C) + 1; });
     if (batch.length) slot += Math.ceil(batch.length / C);
   }

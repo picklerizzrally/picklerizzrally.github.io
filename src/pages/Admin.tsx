@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { EVENT, FEE, feeFor, feeLine, isEarlyBird, rupees, siteUrl } from "../config";
+import { EVENT, FEE, TOP_PRIZE, feeFor, feeLine, isEarlyBird, rupees, siteUrl } from "../config";
 import {
   approveRegistration, deleteRegistration, login, logout, setRegStatus, updateState, useLive, useRegistrations, useUser,
   type Registration,
@@ -172,19 +172,19 @@ function Registrations({ regs }: { regs: Registration[] }) {
 
 /* ---------- teams ---------- */
 const TEST_TEAMS: [string, string, string, Div, number][] = [
-  ["Smash Brothers", "Rohan Mehta", "Aditya Jain", "mens", 5], ["Dink Dynasty", "Karan Patel", "Vivek Sharma", "mens", 4],
-  ["Kitchen Kings", "Arjun Verma", "Siddharth Rao", "mens", 4], ["Rajwada Rallies", "Nikhil Agrawal", "Pranav Joshi", "mens", 3],
-  ["Poha Paddlers", "Harsh Malviya", "Yash Tiwari", "mens", 3], ["Sarafa Smashers", "Ankit Gupta", "Mayank Soni", "mens", 2],
+  ["Smash Brothers", "Rohan Mehta", "Aditya Jain", "doubles", 5], ["Dink Dynasty", "Karan Patel", "Vivek Sharma", "doubles", 4],
+  ["Kitchen Kings", "Arjun Verma", "Siddharth Rao", "doubles", 4], ["Rajwada Rallies", "Nikhil Agrawal", "Pranav Joshi", "doubles", 3],
+  ["Poha Paddlers", "Harsh Malviya", "Yash Tiwari", "doubles", 3], ["Sarafa Smashers", "Ankit Gupta", "Mayank Soni", "doubles", 2],
   ["Ananya Singh", "Ananya Singh", "", "solo", 5], ["Neha Jain", "Neha Jain", "", "solo", 4],
   ["Kunal Bhatia", "Kunal Bhatia", "", "solo", 3], ["Riya Choudhary", "Riya Choudhary", "", "solo", 2],
-  ["Partners in Dink", "Varun Shah", "Aditi Mehta", "mixed", 5], ["Erne Express", "Sameer Khan", "Zoya Qureshi", "mixed", 4],
-  ["Jalebi Jam", "Gaurav Sethi", "Payal Arora", "mixed", 3], ["Volley Llamas", "Parth Desai", "Mansi Thakur", "mixed", 2],
+  ["Partners in Dink", "Varun Shah", "Aditi Mehta", "doubles", 5], ["Erne Express", "Sameer Khan", "Zoya Qureshi", "doubles", 4],
+  ["Jalebi Jam", "Gaurav Sethi", "Payal Arora", "doubles", 3], ["Volley Llamas", "Parth Desai", "Mansi Thakur", "doubles", 2],
 ];
 
 function Teams() {
   const { state } = useLive();
   const { run, busy, note } = useAction();
-  const [f, setF] = useState({ name: "", p1: "", p2: "", div: "mens" as Div, skill: 3 });
+  const [f, setF] = useState({ name: "", p1: "", p2: "", div: "doubles" as Div, skill: 3 });
   const warn = state.generated ? "The schedule already exists. After changing teams, regenerate it in Setup." : "";
 
   const add = (e: FormEvent) => {
@@ -301,7 +301,7 @@ function Setup() {
           {num("qualifiers", "Teams through per pool", 1, 4)}
           {num("poolTarget", "Pool games to", 7, 21)}
           {num("koTarget", "Knockout games to", 7, 21)}
-          {num("cap", "Max teams per division", 2, 64)}
+          {num("cap", "Max entries per category", 2, 64)}
           <label className="flex items-center gap-3 self-end rounded-[14px] border border-[#d8d9d1] p-4 text-sm font-bold">
             <input type="checkbox" className="h-5 w-5 accent-[#789b2d]" checked={f.regOpen} onChange={(e) => setF({ ...f, regOpen: e.target.checked })} />
             Registration open
@@ -441,11 +441,13 @@ function Stories() {
   const options: [string, string, StoryContent][] = [
     ["Registrations open", "Bring teams in", {
       kicker: `29.11 · ${EVENT.city}`, title: ["Serve it.", "Own it."], highlight: 1,
-      sticker: isEarlyBird() ? ["early bird", rupees(FEE.early)] : ["pull up", "29.11"],
-      lines: ["men’s doubles · mixed doubles · solo", `${EVENT.venue}, ${EVENT.city}`, feeLine(), `registration closes ${EVENT.registrationCloses}`],
+      sticker: ["win", rupees(TOP_PRIZE)],
+      chips: [`🏆 win up to ${rupees(TOP_PRIZE)}`, "🥤 water + refreshments", "🏓 2+ matches", "🧍 solo entry", "✨ all levels"],
+      lines: ["doubles · solo · open to everyone", feeLine(), `registration closes ${EVENT.registrationCloses}`],
       footer: "Claim your spot", url: `${base}#/register` }],
     ["Last few spots", "Push before the deadline", {
-      kicker: "filling fast", title: ["Last few", "spots fr"], highlight: 1, sticker: ["don’t", "sleep"], lines: counts, footer: "Grab your spot", url: `${base}#/register` }],
+      kicker: "filling fast", title: ["Last few", "spots fr"], highlight: 1, sticker: isEarlyBird() ? ["early bird", rupees(FEE.early)] : ["don’t", "sleep"],
+      chips: [`🏆 ${rupees(TOP_PRIZE)} top prize`, "🥤 water + refreshments", "🏓 2+ matches"], lines: counts, footer: "Grab your spot", url: `${base}#/register` }],
     ["Schedule is out", "After you generate pools", {
       kicker: "pools are drawn", title: ["Schedule", "dropped"], highlight: 1, sticker: ["find", "your court"],
       lines: [`First serve ${fmtTime(startMin(state))}`, `${state.teams.length} teams, ${state.settings.courts} courts`, "Find your team and your court"],

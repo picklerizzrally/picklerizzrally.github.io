@@ -3,7 +3,7 @@ import { EVENT, photo, siteUrl } from "../config";
 import { useLive } from "../lib/store";
 import {
   DIVS, champion, divLabel, fmtTime, isBye, isDone, koRounds, koStartMin, matchTime, nameOf, playersOf,
-  namesOf, roundName, standings, statusMap, stats, type Div, type Match, type State,
+  koLabel, namesOf, roundName, standings, statusMap, stats, type Div, type Match, type State,
 } from "../lib/tournament";
 import { Icon } from "../components/Icon";
 import { Empty, MatchRow, PageTitle, Shell, StatusPill } from "../components/ui";
@@ -48,7 +48,7 @@ export default function Live({ tab: initial }: { tab?: string }) {
       </PageTitle>
 
       <div className="relative mb-8 h-40 overflow-hidden rounded-[28px] md:h-52">
-        <img src={photo("golden-hour-paddles.jpg")} alt="" className="absolute inset-0 h-full w-full object-cover object-[center_35%]" />
+        <img src={photo("ball-net-shadow.jpg")} alt="" className="absolute inset-0 h-full w-full object-cover object-[center_55%]" />
         <div className="absolute inset-0 bg-gradient-to-r from-[#102b1b]/85 via-[#102b1b]/40 to-transparent" />
         <p className="font-display absolute bottom-5 left-6 text-3xl font-bold uppercase text-white md:text-5xl">
           Live from {EVENT.venue}
@@ -101,9 +101,9 @@ export default function Live({ tab: initial }: { tab?: string }) {
             </button>
           ))}
         </div>
-        <select value={div} onChange={(e) => setDiv(e.target.value as "all" | Div)} aria-label="Division"
+        <select value={div} onChange={(e) => setDiv(e.target.value as "all" | Div)} aria-label="Category"
           className="rounded-full border border-[#d8d9d1] bg-white px-5 py-2.5 text-sm font-bold">
-          <option value="all">All divisions</option>
+          <option value="all">All categories</option>
           {DIVS.map((d) => <option key={d.key} value={d.key}>{d.label}</option>)}
         </select>
       </div>
@@ -131,8 +131,7 @@ function ScheduleList({ s, div, statuses }: { s: State; div: "all" | Div; status
     .sort((x, y) => (matchTime(s, x) ?? 1e9) - (matchTime(s, y) ?? 1e9) || (x.court ?? 0) - (y.court ?? 0));
   const labelFor = (m: Match) => {
     if (m.stage === "pool") return `Pool ${m.pool}`;
-    const rounds = koRounds(s, m.div);
-    return roundName(rounds.length, m.round);
+    return koLabel(s, m);
   };
   return (
     <div className="overflow-hidden rounded-[28px] border border-[#d8d8cf] bg-white">
@@ -219,9 +218,13 @@ export function Bracket({ s, div, render }: { s: State; div: Div; render?: (m: M
                     <b>{nameOf(s, m.a ?? m.b)}</b> <span className="text-[#6d746e]">moves on with a bye</span>
                   </div>
                 ) : render ? (
-                  <div key={m.id}>{render(m)}</div>
+                  <div key={m.id}>
+                    {m.bronze && <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[#6d746e]">3rd place match</p>}
+                    {render(m)}
+                  </div>
                 ) : (
                   <div key={m.id} className="rounded-[22px] border border-[#d8d8cf] bg-white p-4">
+                    {m.bronze && <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[#6d746e]">3rd place match</p>}
                     <div className="mb-2 flex items-center justify-between text-xs font-semibold text-[#6d746e]">
                       <span>{m.court && m.a && m.b ? `Court ${m.court}, ${fmtTime(matchTime(s, m)!)}` : "Waiting for teams"}</span>
                       {m.a && m.b && <StatusPill status={statuses[m.id]} />}

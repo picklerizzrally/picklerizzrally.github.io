@@ -33,7 +33,7 @@ service cloud.firestore {
                           || (request.resource.data.division != 'solo' && str(request.resource.data.player2, 1, 40)))
                       && request.resource.data.phone is string && request.resource.data.phone.matches('^[0-9]{10}$')
                       && str(request.resource.data.email, 3, 80)
-                      && request.resource.data.division in ['mens', 'mixed', 'solo']
+                      && request.resource.data.division in ['doubles', 'solo']
                       && request.resource.data.skill is int && request.resource.data.skill >= 1 && request.resource.data.skill <= 5
                       && str(request.resource.data.upiRef, 4, 40)
                       && request.resource.data.status == 'pending'

@@ -64,7 +64,7 @@ function PayBox({ solo }: { solo: boolean }) {
 export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; onClose: () => void }) {
   const { state } = useLive();
   const count = (d: Div) => state.teams.filter((t) => t.div === d).length;
-  const firstOpen = DIVS.find((d) => count(d.key) < state.settings.cap)?.key ?? "mens";
+  const firstOpen = DIVS.find((d) => count(d.key) < state.settings.cap)?.key ?? "doubles";
   const [f, setF] = useState({
     teamName: "", player1: "", player2: "", phone: "", email: "",
     division: (DIVS.some((d) => d.key === initialDiv) ? initialDiv : firstOpen) as Div,
@@ -82,7 +82,7 @@ export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; on
     if (f.website) return setDone(true); // hidden field, only bots fill it
     const phone = f.phone.replace(/\D/g, "").slice(-10);
     if (phone.length !== 10) return setErr("Enter a 10 digit WhatsApp number");
-    if (count(f.division) >= state.settings.cap) return setErr("That division is full. Pick another one.");
+    if (count(f.division) >= state.settings.cap) return setErr("That category is full. Pick the other one.");
     setBusy(true);
     const msg = await submitRegistration({
       // a solo entry shows on the schedule under the player's own name
@@ -124,11 +124,11 @@ export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; on
               Entry: <Price className="text-[#132116]" solo={solo} />
             </p>
             <form onSubmit={submit} className="mt-7 space-y-4">
-              <label className="block text-sm font-bold">Division
+              <label className="block text-sm font-bold">Category
                 <select value={f.division} onChange={set("division")} className="form-input">
                   {DIVS.map((d) => (
                     <option key={d.key} value={d.key} disabled={count(d.key) >= state.settings.cap}>
-                      {d.label}{d.key === "solo" ? " (singles)" : ""}{count(d.key) >= state.settings.cap ? " (full)" : ""}
+                      {d.label}{d.key === "solo" ? " (singles, one player)" : " (two players)"}{count(d.key) >= state.settings.cap ? " (full)" : ""}
                     </option>
                   ))}
                 </select>
@@ -175,7 +175,7 @@ export function RegisterModal({ initialDiv, onClose }: { initialDiv?: string; on
               <p className="text-xs text-[#687169]">
                 Questions? WhatsApp{" "}
                 {EVENT.whatsappNumbers.map((n, i) => (
-                  <span key={n}>{i > 0 && " or "}<a className="font-semibold underline" href={`https://wa.me/${n}`} target="_blank" rel="noreferrer">{prettyPhone(n)}</a></span>
+                  <span key={n}>{i > 0 && " or "}<a className="whitespace-nowrap font-semibold underline" href={`https://wa.me/${n}`} target="_blank" rel="noreferrer">{prettyPhone(n)}</a></span>
                 ))}
               </p>
               <button disabled={busy} className="flex w-full items-center justify-center gap-4 rounded-full bg-[#b8ef3f] py-4 font-bold transition hover:bg-[#132116] hover:text-white disabled:opacity-60">

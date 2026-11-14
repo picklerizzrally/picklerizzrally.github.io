@@ -7,6 +7,7 @@ export interface StoryContent {
   highlight?: number; // index of the title line drawn in lime with an echo
   sticker?: string[]; // 1 or 2 short lines on the rotated starburst sticker
   lines: string[]; // supporting details, drawn as pills
+  chips?: string[]; // short perks drawn as a row of pills under the title
   footer: string; // call to action on the ticket
   url: string; // where the QR code and link sticker point
 }
@@ -113,7 +114,8 @@ export async function renderStory(c: StoryContent): Promise<Blob> {
   canvas.height = H;
   const ctx = canvas.getContext("2d")!;
   ctx.textBaseline = "alphabetic";
-  const PHOTO_H = 1180;
+  const chips = (c.chips ?? []).filter(Boolean);
+  const PHOTO_H = chips.length ? 1060 : 1180; // the photo gives up some height when there are perks to show
 
   /* background and photo, fading into deep green */
   ctx.fillStyle = FOREST;
@@ -198,9 +200,31 @@ export async function renderStory(c: StoryContent): Promise<Blob> {
   sparkle(ctx, W - 96, PHOTO_H - 150, 24, LIME);
   sparkle(ctx, W - 150, PHOTO_H - 90, 11, CREAM);
 
+  /* perks: pills that wrap onto at most two rows, the first one in lime */
+  let chipsBottom = PHOTO_H;
+  if (chips.length) {
+    ctx.font = `700 30px ${BODY}`;
+    const padX = 26, chipH = 60, gap = 14, maxX = W - 70;
+    let cx = 70, cy = PHOTO_H + 30, row = 0;
+    for (let i = 0; i < chips.length; i++) {
+      const text = chips[i];
+      const w = ctx.measureText(text).width + padX * 2;
+      if (cx + w > maxX) { row++; cx = 70; cy += chipH + gap; }
+      if (row > 1) break;
+      boxPath(ctx, cx, cy, w, chipH, chipH / 2);
+      ctx.fillStyle = i === 0 ? LIME : "rgba(255,255,255,0.08)";
+      ctx.fill();
+      if (i > 0) { ctx.strokeStyle = "rgba(184,239,63,0.45)"; ctx.lineWidth = 2; ctx.stroke(); }
+      ctx.fillStyle = i === 0 ? INK : CREAM;
+      ctx.fillText(text, cx + padX, cy + 41);
+      cx += w + gap;
+      chipsBottom = cy + chipH;
+    }
+  }
+
   /* details: a neat list with a thin lime rule on the left */
-  const details = c.lines.filter(Boolean).slice(0, 4);
-  const listTop = PHOTO_H + 40;
+  const details = c.lines.filter(Boolean).slice(0, chips.length ? 3 : 4);
+  const listTop = chipsBottom + (chips.length ? 36 : 40);
   const step = 70;
   ctx.fillStyle = LIME;
   boxPath(ctx, 70, listTop, 6, details.length * step - 20, 3);

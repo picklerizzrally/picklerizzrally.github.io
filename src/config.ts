@@ -62,6 +62,39 @@ export const prettyPhone = (n: string) => `${n.slice(-10, -5)} ${n.slice(-5)}`;
 
 export const isConfigured = !firebaseConfig.apiKey.startsWith("PASTE");
 
+// Prize money and trophies, shown on the home page and the stories
+export const PRIZES = {
+  doubles: [
+    { place: "1st", cash: 6000, trophy: true },
+    { place: "2nd", cash: 3000, trophy: true },
+    { place: "3rd", cash: 1000, trophy: true },
+  ],
+  solo: [
+    { place: "Winner", cash: 3000, trophy: true },
+    { place: "Runner-up", cash: 500, trophy: true },
+  ],
+};
+export const TOP_PRIZE = PRIZES.doubles[0].cash;
+
+// What players get on the day. Keep this honest: only list what will really be there.
+export const PERKS = [
+  ["💧", "water + ORS on court"],
+  ["🥤", "refreshments sorted"],
+  ["🏆", "trophies + cash prizes"],
+  ["🏓", "2+ matches guaranteed"],
+  ["🧍", "solo? no partner needed"],
+  ["📱", "live scores on your phone"],
+  ["✨", "beginners welcome fr"],
+] as const;
+
+// Credit line at the bottom of every page
+export const CREDIT = {
+  name: "Arnav Shahi",
+  contactLabel: "Contact for web creation",
+  // opens WhatsApp with a ready message to Arnav
+  contactUrl: "https://wa.me/917869966517?text=Hi%20Arnav%2C%20I%20saw%20the%20pickle.rizz.rally%20website%20and%20want%20a%20website%20made",
+};
+
 // Photos live in public/images; this builds the right path on GitHub Pages
 export const photo = (name: string) => `${import.meta.env.BASE_URL}images/${name}`;
 

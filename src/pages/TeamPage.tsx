@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { EVENT, siteUrl } from "../config";
 import { useLive } from "../lib/store";
 import {
-  champion, divLabel, fmtTime, isBye, isDone, koRounds, matchTime, nameOf, poolOfTeam, roundName, standings,
+  champion, divLabel, fmtTime, isBye, isDone, matchTime, nameOf, koLabel, poolOfTeam, standings,
   namesOf, statusMap, teamMatches, teamOf, type Match,
 } from "../lib/tournament";
 import { Icon } from "../components/Icon";
@@ -34,7 +34,7 @@ export default function TeamPage({ id }: { id: string }) {
   const pool = poolOfTeam(state, team);
   const rank = pool ? standings(state, team.div, pool).findIndex((r) => r.id === id) + 1 : 0;
   const isChamp = champion(state, team.div) === id;
-  const label = (m: Match) => (m.stage === "pool" ? `Pool ${m.pool}` : roundName(koRounds(state, m.div).length, m.round));
+  const label = (m: Match) => (m.stage === "pool" ? `Pool ${m.pool}` : koLabel(state, m));
   const last = played[played.length - 1];
   const opp = (m: Match) => (m.a === id ? m.b : m.a);
   const score = (m: Match) => (m.a === id ? `${m.sa}-${m.sb}` : `${m.sb}-${m.sa}`);
