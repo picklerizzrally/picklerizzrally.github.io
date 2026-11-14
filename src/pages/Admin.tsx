@@ -6,7 +6,7 @@ import {
 } from "../lib/store";
 import {
   DIVS, buildKO, champion, divLabel, estimateFinish, fmtTime, generateSchedule, isBye, isDone, matchTime, nameOf,
-  namesOf, propagate, startMin, statusMap, uid, type Div, type Match, type Settings, type State,
+  namesOf, propagate, spotsLeft, spotsText, startMin, statusMap, uid, type Div, type Match, type Settings, type State,
 } from "../lib/tournament";
 import { Icon } from "../components/Icon";
 import { Empty, PageTitle, ScoreEditor, Shell } from "../components/ui";
@@ -442,13 +442,13 @@ function Stories() {
     ["Registrations open", "Bring teams in", {
       kicker: `29.11 · ${EVENT.city}`, title: ["Serve it.", "Own it."], highlight: 1,
       sticker: ["win", rupees(TOP_PRIZE)],
-      chips: [`🏆 win up to ${rupees(TOP_PRIZE)}`, "🔥 limited spots", "🥤 water + refreshments", "🏓 2+ matches", "🧍 solo entry", "✨ all levels"],
-      lines: ["doubles · solo · open to everyone", feeLine(), `registration closes ${EVENT.registrationCloses}`],
+      chips: [`🏆 win up to ${rupees(TOP_PRIZE)}`, "🔥 filling fast", "🥤 water + refreshments", "🏓 2+ matches", "🧍 solo entry", "✨ all levels"],
+      lines: [`${spotsText(state, "doubles")} · ${spotsText(state, "solo")}`, feeLine(), `registration closes ${EVENT.registrationCloses}`],
       footer: "Claim your spot", url: `${base}#/register` }],
     ["Last few spots", "Push before the deadline", {
       kicker: "filling fast", title: ["Last few", "spots fr"], highlight: 1, sticker: isEarlyBird() ? ["early bird", rupees(FEE.early)] : ["don’t", "sleep"],
-      chips: [`🏆 ${rupees(TOP_PRIZE)} top prize`, "🔥 limited spots", "🥤 water + refreshments", "🏓 2+ matches"],
-      lines: ["limited spots in doubles and solo", feeLine(), `registration closes ${EVENT.registrationCloses}`], footer: "Grab your spot", url: `${base}#/register` }],
+      chips: [`🏆 ${rupees(TOP_PRIZE)} top prize`, "🥤 water + refreshments", "🏓 2+ matches"],
+      lines: [spotsText(state, "doubles"), spotsText(state, "solo"), feeLine()], footer: "Grab your spot", url: `${base}#/register` }],
     ["Schedule is out", "After you generate pools", {
       kicker: "pools are drawn", title: ["Schedule", "dropped"], highlight: 1, sticker: ["find", "your court"],
       lines: [`First serve ${fmtTime(startMin(state))}`, `${state.teams.length} teams, ${state.settings.courts} courts`, "Find your team and your court"],

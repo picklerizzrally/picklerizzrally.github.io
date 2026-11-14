@@ -11,7 +11,12 @@ export const divLabel = (d: Div) => DIVS.find((x) => x.key === d)?.label ?? d;
 export const isSoloDiv = (d: Div) => d === "solo";
 // Entry limit for a category, and whether it has filled up
 export const capFor = (s: State, d: Div) => (d === "solo" ? s.settings.capSolo : s.settings.capDoubles);
-export const isFull = (s: State, d: Div) => s.teams.filter((t) => t.div === d).length >= capFor(s, d);
+export const entriesIn = (s: State, d: Div) => s.teams.filter((t) => t.div === d).length;
+export const spotsLeft = (s: State, d: Div) => Math.max(0, capFor(s, d) - entriesIn(s, d));
+export const isFull = (s: State, d: Div) => spotsLeft(s, d) === 0;
+// "7 of 24 doubles spots left" style text, used on the site and the stories
+export const spotsText = (s: State, d: Div) =>
+  isFull(s, d) ? `${d === "solo" ? "solo" : "doubles"} is full` : `${spotsLeft(s, d)} of ${capFor(s, d)} ${d === "solo" ? "solo" : "doubles"} spots left`;
 // "Rohan Mehta and Aditya Jain", or just "Rohan Mehta" for a solo entry
 export const namesOf = (t: { p1: string; p2: string }) => (t.p2 ? `${t.p1} and ${t.p2}` : t.p1);
 

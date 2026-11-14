@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { CREDIT, EVENT, feeLine, isEarlyBird, FEE, PERKS, PRIZES, TOP_PRIZE, photo, rupees, prettyPhone, siteUrl } from "../config";
 import { useLive } from "../lib/store";
-import { DIVS, fmtTime, isDone, isFull, matchTime, startMin, statusMap, type Div } from "../lib/tournament";
+import { DIVS, capFor, entriesIn, fmtTime, isDone, isFull, matchTime, spotsLeft, spotsText, startMin, statusMap, type Div } from "../lib/tournament";
 
 const HOW = [
   ["Claim your spot", "Pick Doubles or Solo and fill in the form. Takes about two minutes."],
@@ -37,8 +37,8 @@ export default function Home() {
     title: ["Serve it.", "Own it."],
     highlight: 1,
     sticker: ["win", rupees(TOP_PRIZE)],
-    chips: [`🏆 win up to ${rupees(TOP_PRIZE)}`, "🔥 limited spots", "🥤 water + refreshments", "🏓 2+ matches", "🧍 solo entry", "✨ all levels"],
-    lines: ["doubles · solo · open to everyone", feeLine(), `${EVENT.venue}, ${EVENT.city}`],
+    chips: [`🏆 win up to ${rupees(TOP_PRIZE)}`, "🔥 filling fast", "🥤 water + refreshments", "🏓 2+ matches", "🧍 solo entry", "✨ all levels"],
+    lines: [`${spotsText(state, "doubles")} · ${spotsText(state, "solo")}`, feeLine(), `${EVENT.venue}, ${EVENT.city}`],
     footer: regOpen ? "Claim your spot" : "Follow live",
     url: regOpen ? `${siteUrl()}#/register` : `${siteUrl()}#/live`,
   };
@@ -124,11 +124,7 @@ export default function Home() {
                   </span>
                   {isFull(state, "doubles") && isFull(state, "solo")
                     ? "Both categories are full"
-                    : isFull(state, "doubles")
-                      ? "Doubles is full · limited solo spots left"
-                      : isFull(state, "solo")
-                        ? "Solo is full · limited doubles spots left"
-                        : "Limited spots · grab yours before they’re gone"}
+                    : `${spotsText(state, "doubles").replace(/^./, (c) => c.toUpperCase())} · ${spotsText(state, "solo")}`}
                 </p>
               )}
             </div>
@@ -303,10 +299,16 @@ export default function Home() {
                       <span>
                         <strong className="font-display text-3xl uppercase md:text-4xl">{d.label}</strong>
                         <small className="mt-1 block text-sm text-white/50">{d.detail}</small>
+                        <small className="mt-1 block text-sm font-bold md:hidden" style={{ color: d.color }}>
+                          {entriesIn(state, d.key)} / {capFor(state, d.key)} · {isFull(state, d.key) ? "full" : `${spotsLeft(state, d.key)} spots left`}
+                        </small>
                       </span>
                       <span className="hidden text-sm md:block">
-                        <b style={{ color: d.color }}>{isFull(state, d.key) ? "Full" : "Limited"}</b>
-                        <small className="block text-white/45">{isFull(state, d.key) ? "no spots left" : "spots only"}</small>
+                        <b style={{ color: d.color }}>{entriesIn(state, d.key)} / {capFor(state, d.key)}</b>
+                        <small className="block text-white/45">{isFull(state, d.key) ? "full" : `${spotsLeft(state, d.key)} spots left`}</small>
+                        <span className="mt-2 block h-1.5 w-full overflow-hidden rounded-full bg-white/15" aria-hidden="true">
+                          <span className="block h-full rounded-full" style={{ width: `${Math.min(100, (entriesIn(state, d.key) / capFor(state, d.key)) * 100)}%`, background: d.color }} />
+                        </span>
                       </span>
                       <span className="grid h-12 w-12 place-items-center rounded-full border border-white/25 transition group-hover:rotate-[-30deg] group-hover:bg-[#b8ef3f] group-hover:text-[#132116]">
                         <Icon name="arrow" />
