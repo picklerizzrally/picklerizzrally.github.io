@@ -6,8 +6,7 @@ import {
 } from "../lib/store";
 import {
   DIVS, buildKO, champion, divLabel, estimateFinish, fmtTime, generateSchedule, isBye, isDone, matchTime, nameOf,
-  namesOf, propagate, spotsLeft, spotsText, startMin, statusMap, uid, type Div, type Match, type Settings, type State,
-} from "../lib/tournament";
+  namesOf, propagate, spotsLeft, spotsText, startMin, statusMap, uid, type Div, type Match, type Settings, type State, normalize } from "../lib/tournament";
 import { Icon } from "../components/Icon";
 import { Empty, PageTitle, ScoreEditor, Shell } from "../components/ui";
 import { ShareStory } from "../components/ShareStory";
@@ -285,11 +284,39 @@ function Setup() {
   const { state } = useLive();
   const { run, busy, note } = useAction();
   const [f, setF] = useState<Settings>(state.settings);
-  const num = (k: keyof Settings, label: string, min: number, max: number) => (
+  // Dropdowns for the match-day choices, so any value can be picked with one tap
+  const pick = (k: keyof Settings, label: string, options: number[], unit = "") => (
     <label className="block text-sm font-bold">{label}
-      <input type="number" min={min} max={max} value={f[k] as number} onChange={(e) => setF({ ...f, [k]: Math.min(max, Math.max(min, Number(e.target.value) || min)) })} className="form-input" />
+      <select value={f[k] as number} onChange={(e) => setF({ ...f, [k]: Number(e.target.value) })} className="form-input">
+        {options.map((o) => <option key={o} value={o}>{o}{unit}</option>)}
+      </select>
     </label>
   );
+  // Free number boxes keep whatever is typed (even an empty box) until it is a real number
+  const [draft, setDraft] = useState<Partial<Record<keyof Settings, string>>>({});
+  const num = (k: keyof Settings, label: string, min: number, max: number) => (
+    <label className="block text-sm font-bold">{label}
+      <input type="number" inputMode="numeric" min={min} max={max}
+        value={draft[k] ?? String(f[k])}
+        onChange={(e) => {
+          setDraft({ ...draft, [k]: e.target.value });
+          const n = Number(e.target.value);
+          if (e.target.value !== "" && Number.isFinite(n)) setF({ ...f, [k]: Math.min(max, Math.max(min, Math.round(n))) });
+        }}
+        onBlur={() => setDraft({ ...draft, [k]: undefined })}
+        className="form-input" />
+    </label>
+  );
+  // Dry run of the schedule with the settings on screen, before anything is saved
+  const preview = useMemo(() => {
+    const s = normalize(JSON.parse(JSON.stringify(state)));
+    s.settings = { ...f };
+    if (s.teams.length < 2) return null;
+    generateSchedule(s);
+    buildKO(s);
+    const live = s.matches.filter((m) => !isBye(m));
+    return { matches: live.length, pool: live.filter((m) => m.stage === "pool").length, finish: estimateFinish(s), b2b: s.backToBack };
+  }, [state, f]);
   const save = () => run(() => updateState((s) => { s.settings = { ...f }; }), "Settings saved");
   const generate = () => {
     if (state.generated && !confirm("This clears every score and the bracket, then builds a new schedule. Continue?")) return;
@@ -312,22 +339,29 @@ function Setup() {
           <label className="block text-sm font-bold">First match
             <input type="time" value={f.start} onChange={(e) => setF({ ...f, start: e.target.value })} className="form-input" />
           </label>
-          {num("courts", "Courts", 1, 12)}
-          {num("matchMin", "Minutes per match", 8, 60)}
-          {num("breakMin", "Break before knockouts", 0, 120)}
-          {num("poolSize", "Teams per pool (target)", 3, 8)}
-          {num("qualifiers", "Teams through per pool", 1, 4)}
-          {num("poolTarget", "Pool games to", 7, 21)}
-          {num("koTarget", "Knockout games to", 7, 21)}
-          {num("capDoubles", "Max doubles teams", 2, 64)}
-          {num("capSolo", "Max solo players", 2, 64)}
-          {num("offlineDoubles", "Doubles booked outside the site", 0, 64)}
-          {num("offlineSolo", "Solo booked outside the site", 0, 64)}
+          {pick("courts", "Courts", [1, 2, 3, 4, 5, 6, 7, 8])}
+          {pick("matchMin", "Minutes per match", [10, 12, 15, 18, 20, 25, 30], " min")}
+          {pick("breakMin", "Break before knockouts", [0, 10, 15, 20, 30, 45, 60], " min")}
+          {pick("poolSize", "Teams per pool", [3, 4, 5, 6])}
+          {pick("qualifiers", "Through to knockouts per pool", [1, 2, 3, 4])}
+          {pick("poolTarget", "Pool games to", [7, 9, 11, 15, 21], " points")}
+          {pick("koTarget", "Knockout games to", [9, 11, 15, 21], " points")}
+          {num("capDoubles", "Doubles spots shown on site", 1, 99)}
+          {num("capSolo", "Solo spots shown on site", 1, 99)}
+          {num("offlineDoubles", "Doubles already booked (shown)", 0, 99)}
+          {num("offlineSolo", "Solo already booked (shown)", 0, 99)}
           <label className="flex items-center gap-3 self-end rounded-[14px] border border-[#d8d9d1] p-4 text-sm font-bold">
             <input type="checkbox" className="h-5 w-5 accent-[#789b2d]" checked={f.regOpen} onChange={(e) => setF({ ...f, regOpen: e.target.checked })} />
             Registration open
           </label>
         </div>
+        {preview && (
+          <p className="mt-5 rounded-2xl bg-[#f4f3ed] p-4 text-sm">
+            <b>With these settings:</b> {preview.pool} pool matches and {preview.matches - preview.pool} knockout matches on {f.courts} court{f.courts > 1 ? "s" : ""},
+            first serve {fmtTime(startMin({ ...state, settings: f }))}, finishing around <b>{preview.finish}</b>.
+            {preview.b2b > 0 && ` ${preview.b2b} matches would be back-to-back.`}
+          </p>
+        )}
         <button disabled={busy} onClick={save} className="mt-5 rounded-full bg-[#132116] px-6 py-3 font-bold text-white">Save settings</button>
       </div>
 

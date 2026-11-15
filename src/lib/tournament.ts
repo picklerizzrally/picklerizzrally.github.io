@@ -16,8 +16,9 @@ export const entriesIn = (s: State, d: Div) => s.teams.filter((t) => t.div === d
 export const spotsLeft = (s: State, d: Div) => Math.max(0, capFor(s, d) - entriesIn(s, d));
 export const isFull = (s: State, d: Div) => spotsLeft(s, d) === 0;
 // "7 of 24 doubles spots left" style text, used on the site and the stories
-export const spotsText = (s: State, d: Div) =>
-  isFull(s, d) ? `${d === "solo" ? "solo" : "doubles"} is full` : `${d === "solo" ? "solo" : "doubles"} ${entriesIn(s, d)}/${capFor(s, d)} booked`;
+// Shown count never goes past the advertised number of spots; registration itself has no limit
+export const bookedShown = (s: State, d: Div) => Math.min(entriesIn(s, d), capFor(s, d));
+export const spotsText = (s: State, d: Div) => `${d === "solo" ? "solo" : "doubles"} ${bookedShown(s, d)}/${capFor(s, d)} booked`;
 // "Rohan Mehta and Aditya Jain", or just "Rohan Mehta" for a solo entry
 export const namesOf = (t: { p1: string; p2: string }) => (t.p2 ? `${t.p1} and ${t.p2}` : t.p1);
 
@@ -85,8 +86,8 @@ export const DEFAULT_SETTINGS: Settings = {
   qualifiers: 2,
   capDoubles: 24,
   capSolo: 20,
-  offlineDoubles: 0,
-  offlineSolo: 0,
+  offlineDoubles: 10,
+  offlineSolo: 3,
   regOpen: true,
 };
 

@@ -111,7 +111,7 @@ export default function Live({ tab: initial }: { tab?: string }) {
       {status === "loading" ? (
         <Empty>Loading live scores</Empty>
       ) : !state.generated ? (
-        <Empty>The schedule appears here once registration closes on {EVENT.registrationCloses}.</Empty>
+        <Empty>The schedule appears here once entries close.</Empty>
       ) : tab === "schedule" ? (
         <ScheduleList s={state} div={div} statuses={statuses} />
       ) : tab === "standings" ? (

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { CREDIT, EVENT, isEarlyBird, FEE, PERKS, PRIZES, TOP_PRIZE, photo, posterPrices, priceNote, registrationWindowOpen, rupees, prettyPhone, siteUrl } from "../config";
+import { CREDIT, EVENT, isEarlyBird, FEE, PERKS, PRIZES, TOP_PRIZE, photo, posterPrices, priceNote, registrationWindowOpen, rupees, prettyPhone, siteUrl, closeText } from "../config";
 import { useLive } from "../lib/store";
-import { DIVS, capFor, entriesIn, fmtTime, isDone, isFull, matchTime, spotsLeft, spotsText, startMin, statusMap, type Div } from "../lib/tournament";
+import { DIVS, bookedShown, capFor, fmtTime, isDone, matchTime, spotsText, startMin, statusMap, type Div } from "../lib/tournament";
 
 // Shown in the schedule before the real fixtures exist, so people can see how a match card reads
 const EXAMPLES: ["doubles" | "solo", string, string, string, string][] = [
@@ -133,9 +133,7 @@ export default function Home() {
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#b8ef3f] opacity-75 motion-reduce:animate-none" />
                     <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#b8ef3f]" />
                   </span>
-                  {isFull(state, "doubles") && isFull(state, "solo")
-                    ? "Both categories are full"
-                    : `${spotsText(state, "doubles").replace(/^./, (c) => c.toUpperCase())} · ${spotsText(state, "solo")}`}
+                  {`${spotsText(state, "doubles").replace(/^./, (c) => c.toUpperCase())} · ${spotsText(state, "solo")}`}
                 </p>
               )}
             </div>
@@ -162,7 +160,7 @@ export default function Home() {
           <div className="ticker flex w-max items-center gap-10 font-display text-xl font-bold uppercase tracking-wide">
             {[1, 2, 3].map((n) => (
               <span key={n} className="flex items-center gap-10">
-                <span>{regOpen ? `Registration closes ${EVENT.registrationCloses}` : "Registration closed"}</span>
+                <span>{regOpen ? closeText() : "Registration closed"}</span>
                 <span className="text-2xl">✦</span>
                 {regOpen && isEarlyBird() && (
                   <>
@@ -259,7 +257,7 @@ export default function Home() {
 
               <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/15 pt-5 font-mono text-[11px] uppercase tracking-[.2em] text-white/40">
                 <span>{EVENT.brand}</span>
-                <span>Registration closes {EVENT.registrationCloses}</span>
+                <span>{closeText()}</span>
               </div>
             </div>
           </div>
@@ -334,7 +332,7 @@ export default function Home() {
                     </div>
                   ))}
                   <p className="px-7 py-6 text-center text-sm text-[#5b655e]">
-                    These are example fixtures. The real schedule goes up here once registration closes on {EVENT.registrationCloses}, and every score updates live.
+                    These are example fixtures. The real schedule goes up here once entries close, and every score updates live.
                   </p>
                 </>
               )}
@@ -370,14 +368,14 @@ export default function Home() {
                         <strong className="font-display text-3xl uppercase md:text-4xl">{d.label}</strong>
                         <small className="mt-1 block text-sm text-white/50">{d.detail}</small>
                         <small className="mt-1 block text-sm font-bold md:hidden" style={{ color: d.color }}>
-                          {entriesIn(state, d.key)}/{capFor(state, d.key)} {isFull(state, d.key) ? "· full" : "booked"}
+                          {bookedShown(state, d.key)}/{capFor(state, d.key)} booked
                         </small>
                       </span>
                       <span className="hidden text-sm md:block">
-                        <b className="text-lg" style={{ color: d.color }}>{entriesIn(state, d.key)}/{capFor(state, d.key)}</b>
-                        <small className="block text-white/45">{isFull(state, d.key) ? "full" : "booked"}</small>
+                        <b className="text-lg" style={{ color: d.color }}>{bookedShown(state, d.key)}/{capFor(state, d.key)}</b>
+                        <small className="block text-white/45">booked</small>
                         <span className="mt-2 block h-1.5 w-full overflow-hidden rounded-full bg-white/15" aria-hidden="true">
-                          <span className="block h-full rounded-full" style={{ width: `${Math.min(100, (entriesIn(state, d.key) / capFor(state, d.key)) * 100)}%`, background: d.color }} />
+                          <span className="block h-full rounded-full" style={{ width: `${Math.min(100, (bookedShown(state, d.key) / capFor(state, d.key)) * 100)}%`, background: d.color }} />
                         </span>
                       </span>
                       <span className="grid h-12 w-12 place-items-center rounded-full border border-white/25 transition group-hover:rotate-[-30deg] group-hover:bg-[#b8ef3f] group-hover:text-[#132116]">

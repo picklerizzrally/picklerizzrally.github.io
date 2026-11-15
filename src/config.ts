@@ -17,7 +17,8 @@ export const EVENT = {
   parkingNote: "Near Treasure Island Mall, MG Road",
   gatesOpen: "7:00 AM",
   registrationCloses: "26 November",
-  registrationClosesAt: "2026-11-26T23:59:59+05:30", // the form switches off on its own after this
+  registrationClosesAt: "2026-11-29T07:00:00+05:30", // the form really closes here, before first serve on match day
+  advertisedCloseAt: "2026-11-26T23:59:59+05:30", // the closing date shown to players
   upiId: "7869966517@sbi",
   prize: "Trophies",
   instagramUrl: "https://instagram.com/yourhandle",
@@ -72,7 +73,14 @@ export const posterPrices = () =>
         { label: "Solo · per player", now: rupees(FEE.soloRegular) },
       ];
 export const priceNote = () =>
-  isEarlyBird() ? `price goes up after ${FEE.earlyLabel} · entries close 26 Nov` : "entries close 26 Nov";
+  isEarlyBird()
+    ? `price goes up after ${FEE.earlyLabel} · entries close 26 Nov`
+    : pastAdvertisedClose()
+      ? "last call for entries"
+      : "entries close 26 Nov";
+// After the advertised date the site says "last call" instead of a date that has passed
+export const pastAdvertisedClose = () => Date.now() > new Date(EVENT.advertisedCloseAt).getTime();
+export const closeText = () => (pastAdvertisedClose() ? "Last call for entries" : `Registration closes ${EVENT.registrationCloses}`);
 export const registrationWindowOpen = () => Date.now() <= new Date(EVENT.registrationClosesAt).getTime();
 
 // "78699 66517" style for showing numbers on the page

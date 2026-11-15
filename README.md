@@ -2,7 +2,7 @@
 
 A live tournament site for a pickleball event at Buddy's Pickleball Junction, Indore, on 29 November 2026. Players register and pay by UPI from their phones, follow real-time scores, standings and brackets, and share Instagram-ready stories. The organiser runs the whole day from one dashboard.
 
-**Live site:** https://picklerizzrally.github.io/
+**Live site:** https://arnav2293-afk.github.io/pickle-rizz-rally/
 
 ![Live scores](docs/live.png)
 
